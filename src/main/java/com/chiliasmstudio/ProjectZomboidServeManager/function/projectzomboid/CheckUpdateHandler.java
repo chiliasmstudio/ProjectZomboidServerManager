@@ -132,26 +132,32 @@ public class CheckUpdateHandler extends Thread {
                     //TODO DISCORD MESSAGE
 
 
-                    Thread.sleep(2 * 1000L);
-                    //Thread.sleep(300 * 1000L);// 5 minute.
-                    rconCommandHandler.sendMessage("Server need reboot! restart in 5 minute.");
-                    serverLogger.info("Server need reboot! restart in 5 minute.");
+                    // If debug flag is set, skip the long countdown and reboot after 10 seconds
+                    if (serverConfig.isDebugSkipRestartDelay()) {
+                        rconCommandHandler.sendMessage("Server need reboot! restart in 10 seconds (debug mode).");
+                        serverLogger.info("Server need reboot! restart in 10 seconds (debug mode).");
+                        Thread.sleep(10 * 1000L);
+                    } else {
+                        //Thread.sleep(2 * 1000L);
+                        Thread.sleep(300 * 1000L);// 5 minute.
+                        rconCommandHandler.sendMessage("Server need reboot! restart in 5 minute.");
+                        serverLogger.info("Server need reboot! restart in 5 minute.");
 
-                    Thread.sleep(2 * 1000L);
-                    //Thread.sleep(240 * 1000L);// 1 minute.
-                    rconCommandHandler.sendMessage("Server need reboot! restart in 1 minute.");
-                    serverLogger.info("Server need reboot! restart in 1 minute.");
+                        //Thread.sleep(2 * 1000L);
+                        Thread.sleep(240 * 1000L);// 1 minute.
+                        rconCommandHandler.sendMessage("Server need reboot! restart in 1 minute.");
+                        serverLogger.info("Server need reboot! restart in 1 minute.");
 
-                    Thread.sleep(2 * 1000L);
-                    //Thread.sleep(30 * 1000L);// 30 second.
-                    rconCommandHandler.sendMessage("Server need reboot! restart in 30 second.");
-                    serverLogger.info("Server need reboot! restart in 30 second.");
+                        //Thread.sleep(2 * 1000L);
+                        Thread.sleep(30 * 1000L);// 30 second.
+                        rconCommandHandler.sendMessage("Server need reboot! restart in 30 second.");
+                        serverLogger.info("Server need reboot! restart in 30 second.");
 
-                    Thread.sleep(2 * 1000L);
-                    //Thread.sleep(20 * 1000L);// 10 second.
-                    rconCommandHandler.sendMessage("Server need reboot! restart in 10 second.");
-                    serverLogger.info("Server need reboot! restart in 10 second.");
-
+                        //Thread.sleep(2 * 1000L);
+                        Thread.sleep(20 * 1000L);// 10 second.
+                        rconCommandHandler.sendMessage("Server need reboot! restart in 10 second.");
+                        serverLogger.info("Server need reboot! restart in 10 second.");
+                    }
                     MainBot.bot_Main.getTextChannelById(serverConfig.getDiscordChannel()).sendMessage(serverConfig.getServerName() + " rebooting!").queue();
                     serverLogger.info("Stopping server.");
 

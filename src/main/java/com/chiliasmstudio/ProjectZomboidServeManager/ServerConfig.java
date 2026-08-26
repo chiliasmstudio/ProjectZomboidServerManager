@@ -19,6 +19,7 @@
 package com.chiliasmstudio.ProjectZomboidServeManager;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -66,7 +67,9 @@ public class ServerConfig {
         //-------- Discord --------
         DiscordChannel = Long.valueOf(properties.getProperty("DiscordChannel", ""));
 
-
+        //-------- Debug --------
+        debugSkipRestartDelay = Boolean.parseBoolean(
+                properties.getProperty("debugSkipRestartDelay", "false"));
     }
 
 
@@ -115,6 +118,12 @@ public class ServerConfig {
     @Getter
     private Long DiscordChannel = 0L;
 
-
-
+    //-------- Debug --------
+    /**
+     * Debug flag to skip long restart countdown delay (5m, 1m, 30s, 10s)
+     * and restart the server directly after 10 seconds.
+     */
+    @Getter
+    @Setter
+    private boolean debugSkipRestartDelay = false;
 }

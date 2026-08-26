@@ -42,8 +42,6 @@ public class SteamAPI {
      * Get and return workshop item ids in collection.
      */
     public static ArrayList<Long> GetCollectionDetail(Long collectionID){
-        // Send Post to steam api.
-        CloseableHttpClient httpclient = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost("https://api.steampowered.com/ISteamRemoteStorage/GetCollectionDetails/v1");
         List<NameValuePair> nvps = new ArrayList<>();
         nvps.add(new BasicNameValuePair("key", Config.SteamKey));
@@ -52,15 +50,16 @@ public class SteamAPI {
         nvps.add(new BasicNameValuePair("publishedfileids[0]", collectionID.toString()));
         httpPost.setEntity(new UrlEncodedFormEntity(nvps));
         ArrayList<Long> itemList = new ArrayList<Long>();
-        try {
-            CloseableHttpResponse response2 = httpclient.execute(httpPost);
-            //System.out.println("GetCollectionDetail with " + response2.getCode() + " " + response2.getReasonPhrase());
-            HttpEntity entity2 = response2.getEntity();
+        
+        try (CloseableHttpClient httpclient = HttpClients.createDefault();
+             CloseableHttpResponse response = httpclient.execute(httpPost)) {
+            //System.out.println("GetCollectionDetail with " + response.getCode() + " " + response.getReasonPhrase());
+            HttpEntity entity = response.getEntity();
             // Response form steam as string.
-            String response = EntityUtils.toString(response2.getEntity(), "UTF-8");
+            String responseBody = EntityUtils.toString(entity, "UTF-8");
 
             // Return item ids in collection.
-            JSONObject obj = new JSONObject(response);
+            JSONObject obj = new JSONObject(responseBody);
             JSONArray collectiondetails = obj
                     .getJSONObject("response")
                     .getJSONArray("collectiondetails")
@@ -71,21 +70,17 @@ public class SteamAPI {
                 String publishedfileid = collectiondetails.getJSONObject(i).getString("publishedfileid");
                 itemList.add(Long.parseLong(publishedfileid));
             }
-            EntityUtils.consume(entity2);
             return itemList;
         } catch (Exception e) {
-            SteamApiLogger.error(e.getMessage());
+            SteamApiLogger.error("Failed to get collection details for collectionID: " + collectionID, e);
             return null;
         }
-
     }
 
     /**
      * Get and return workshop item info in json.
      */
     public static JSONArray GetPublishedFileDetails(ArrayList<Long> itemList) {
-        // Send Post to steam api.
-        CloseableHttpClient httpclient = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost("https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?");
         List<NameValuePair> nvps = new ArrayList<>();
         nvps.add(new BasicNameValuePair("key", Config.SteamKey));
@@ -95,24 +90,22 @@ public class SteamAPI {
             nvps.add(new BasicNameValuePair("publishedfileids[" + i + "]", itemList.get(i).toString()));
         httpPost.setEntity(new UrlEncodedFormEntity(nvps));
 
-        try {
-            CloseableHttpResponse response2 = httpclient.execute(httpPost);
-            //System.out.println("GetPublishedFileDetails with " + response2.getCode() + " " + response2.getReasonPhrase());
-            HttpEntity entity2 = response2.getEntity();
+        try (CloseableHttpClient httpclient = HttpClients.createDefault();
+             CloseableHttpResponse response = httpclient.execute(httpPost)) {
+            //System.out.println("GetPublishedFileDetails with " + response.getCode() + " " + response.getReasonPhrase());
+            HttpEntity entity = response.getEntity();
 
             // Response form steam as string.
-            String response = EntityUtils.toString(response2.getEntity(), "UTF-8");
-            JSONObject obj = new JSONObject(response);
+            String responseBody = EntityUtils.toString(entity, "UTF-8");
+            JSONObject obj = new JSONObject(responseBody);
             JSONArray publishedfiledetails = obj
                     .getJSONObject("response")
                     .getJSONArray("publishedfiledetails");
 
-            EntityUtils.consume(entity2);
             return publishedfiledetails;
         } catch (Exception e) {
-            SteamApiLogger.error(e.getMessage());
+            SteamApiLogger.error("Failed to get published file details for " + itemList.size() + " items", e);
             return null;
         }
-
     }
 }
