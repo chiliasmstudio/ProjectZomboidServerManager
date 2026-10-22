@@ -18,13 +18,14 @@
 
 package com.chiliasmstudio.ProjectZomboidServerManager.function.discord.SlashCommands;
 
-import net.dv8tion.jda.api.events.guild.GuildReadyEvent;
+import com.chiliasmstudio.ProjectZomboidServerManager.function.discord.SlashCommandProvider;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 
 
-public class LuCat extends ListenerAdapter{
+public class LuCat extends ListenerAdapter implements SlashCommandProvider {
 
     /**
      * Reply meow when lucat command send.
@@ -36,13 +37,8 @@ public class LuCat extends ListenerAdapter{
         }
     }
 
-    /**
-     * Register the event
-     */
     @Override
-    public void onGuildReady(GuildReadyEvent event){
-        event.getGuild().updateCommands().addCommands(
-                Commands.slash("lucat", "meow")
-        ).queue();
+    public SlashCommandData getSlashCommand() {
+        return Commands.slash("lucat", "meow");
     }
 }

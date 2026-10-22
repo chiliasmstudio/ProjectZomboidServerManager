@@ -29,7 +29,7 @@ public class TestCommand extends ListenerAdapter {
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         // 確保這是來自伺服器的訊息，而非私訊
-        if (event.isFromGuild()) {
+        if (event.isFromGuild() && !event.getAuthor().isBot()) {
             // 當用戶輸入 "!embed" 時觸發
             if (event.getMessage().getContentRaw().equals("!embed")) {
                 // 創建 EmbedBuilder

@@ -18,24 +18,24 @@
 
 package com.chiliasmstudio.ProjectZomboidServerManager.function.discord.LegacyCommands;
 
-import com.chiliasmstudio.ProjectZomboidServerManager.function.discord.MainBot;
+import com.chiliasmstudio.ProjectZomboidServerManager.function.discord.SlashCommandProvider;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.dv8tion.jda.api.events.guild.GuildReadyEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 
 
-public class HelloWorld extends ListenerAdapter{
+public class HelloWorld extends ListenerAdapter implements SlashCommandProvider {
 
     /**
      * Say Hello world! when !Hello world is received.
      */
     public void onMessageReceived(MessageReceivedEvent event) {
-        if (event.getMessage().getContentStripped().equalsIgnoreCase("!Hello world") && !event.getMember().getUser().isBot()) {
+        // 私訊時 getMember() 為 null，改用 getAuthor() 判斷是否為 Bot
+        if (event.getMessage().getContentStripped().equalsIgnoreCase("!Hello world") && !event.getAuthor().isBot()) {
             event.getChannel().sendMessage("Hello world!").queue();
-            MainBot.jda.retrieveApplicationEmojiById(1315566752192790558L);
             Emoji customEmoji = Emoji.fromCustom("test",1315566752192790558L,true);
             event.getChannel().sendMessage(customEmoji.getFormatted()).queue();
 
@@ -52,13 +52,8 @@ public class HelloWorld extends ListenerAdapter{
         }
     }
 
-    /**
-     * Register the event
-     */
     @Override
-    public void onGuildReady(GuildReadyEvent event){
-        event.getGuild().updateCommands().addCommands(
-                Commands.slash("helloworld", "Say hello world!")
-        ).queue();
+    public SlashCommandData getSlashCommand() {
+        return Commands.slash("helloworld", "Say hello world!");
     }
 }

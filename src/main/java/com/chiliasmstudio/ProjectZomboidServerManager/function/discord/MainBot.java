@@ -26,11 +26,14 @@ import com.chiliasmstudio.ProjectZomboidServerManager.function.discord.SlashComm
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.events.guild.GuildReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainBot {
@@ -65,6 +68,7 @@ public class MainBot {
             botBuilder.setActivity(Activity.playing("Hello discord!"));
 
             boolean needMessageContent = false;
+            List<SlashCommandData> slashCommands = new ArrayList<>();
             for (ListenerAdapter command : AVAILABLE_COMMANDS) {
                 String name = command.getClass().getSimpleName();
                 if (!Config.isCommandEnabled(name))
@@ -73,9 +77,19 @@ public class MainBot {
                 botLogger.info("Discord command enabled: " + name);
                 if (TEXT_COMMANDS.contains(command.getClass()))
                     needMessageContent = true;
+                if (command instanceof SlashCommandProvider provider)
+                    slashCommands.add(provider.getSlashCommand());
             }
             if (needMessageContent)
                 botBuilder.enableIntents(GatewayIntent.MESSAGE_CONTENT);
+
+            // updateCommands() 會整批取代伺服器的指令，因此統一在此一次註冊所有已啟用的斜線指令
+            botBuilder.addEventListeners(new ListenerAdapter() {
+                @Override
+                public void onGuildReady(GuildReadyEvent event) {
+                    event.getGuild().updateCommands().addCommands(slashCommands).queue();
+                }
+            });
 
             jda = botBuilder.build();
         } catch (Exception e) {

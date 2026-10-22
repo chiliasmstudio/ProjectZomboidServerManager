@@ -18,18 +18,19 @@
 
 package com.chiliasmstudio.ProjectZomboidServerManager.function.discord.LegacyCommands;
 
+import com.chiliasmstudio.ProjectZomboidServerManager.function.discord.SlashCommandProvider;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.events.guild.GuildReadyEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 
 import java.awt.Color;
 import java.time.Instant;
 
-public class TestRestartCommand extends ListenerAdapter {
+public class TestRestartCommand extends ListenerAdapter implements SlashCommandProvider {
 
     /**
      * 建構測試重啟的 MessageEmbed 卡片
@@ -85,13 +86,8 @@ public class TestRestartCommand extends ListenerAdapter {
         }
     }
 
-    /**
-     * 註冊伺服器斜線指令
-     */
     @Override
-    public void onGuildReady(GuildReadyEvent event) {
-        event.getGuild().updateCommands().addCommands(
-                Commands.slash("testrestart", "發送測試重啟通知 Embed 卡片")
-        ).queue();
+    public SlashCommandData getSlashCommand() {
+        return Commands.slash("testrestart", "發送測試重啟通知 Embed 卡片");
     }
 }
