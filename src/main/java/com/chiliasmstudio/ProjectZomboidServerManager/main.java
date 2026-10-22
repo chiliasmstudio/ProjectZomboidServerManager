@@ -1,6 +1,6 @@
 /*
  * < ProjectZomboidServerMannger - Project Zomboid server manage software >
- *     Copyright (C) 2022-2024 chiliasmstudio
+ *     Copyright (C) 2022-2026 chiliasmstudio
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -18,139 +18,89 @@
 
 package com.chiliasmstudio.ProjectZomboidServerManager;
 
+import com.chiliasmstudio.ProjectZomboidServerManager.function.discord.MainBot;
 import com.chiliasmstudio.ProjectZomboidServerManager.function.projectzomboid.CheckUpdateHandler;
-
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configurator;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-
-
-import static com.chiliasmstudio.ProjectZomboidServerManager.function.discord.MainBot.initialize;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 public class main {
     private static final Logger mainLogger = LogManager.getLogger("main");
-    public static CheckUpdateHandler[] checkUpdates = new CheckUpdateHandler[30];
+    private static final Path CONFIG_DIR = Path.of("config");
+    private static final Path SERVERS_DIR = CONFIG_DIR.resolve("servers");
+    private static final String SERVER_EXAMPLE = "server_example.properties";
 
     public static void main(String[] args) throws Exception {
-
         for (String arg : args) {
-            // Set the logging level based on the flags passed
+            // 依啟動參數設定 log 等級
             if ("-debug".equalsIgnoreCase(arg)) {
                 Configurator.setRootLevel(Level.DEBUG);
-                break; // Stop checking after setting DEBUG level
+                break;
             } else if ("-trace".equalsIgnoreCase(arg)) {
                 Configurator.setRootLevel(Level.TRACE);
-                break; // Stop checking after setting TRACE level
+                break;
             }
         }
 
+        Config.loadConfig(CONFIG_DIR.resolve("config.properties"));
+        if (!MainBot.initialize(Config.discordToken)) {
+            mainLogger.fatal("Failed to start discord bot, exiting.");
+            System.exit(1);
+        }
+        MainBot.jda.awaitReady();
 
-        //setUpLog4j();
-        mainLogger.trace("This is the trace message, Hello world!");
-        mainLogger.debug("This is a debug message, Hello world!");
-        mainLogger.info("This is an info message, Hello world!");
-        //mainLogger.error("This is an error message.");
-
-        Config.loadConfig(Path.of("config", "config.properties"));
-        initialize(Config.discordToken);
-        Thread.sleep(5000L);
-
-        loadServerConfig();
+        startUpdateCheckers();
     }
 
-    public static void loadServerConfig() throws Exception {
-        // Load the main configuration file
+    /**
+     * 讀取 config/servers 下的伺服器設定，為每台伺服器排程更新檢查。
+     */
+    public static void startUpdateCheckers() throws IOException {
+        Config.copyResourceIfMissing("config/servers/" + SERVER_EXAMPLE, SERVERS_DIR.resolve(SERVER_EXAMPLE));
 
+        List<String> configFiles;
+        try (Stream<Path> files = Files.list(SERVERS_DIR)) {
+            configFiles = files
+                    .filter(Files::isRegularFile)
+                    .map(path -> path.getFileName().toString())
+                    .filter(name -> name.endsWith(".properties") && !name.equals(SERVER_EXAMPLE))
+                    .sorted()
+                    .toList();
+        }
+        if (configFiles.isEmpty())
+            throw new IllegalStateException("No server config files found other than " + SERVER_EXAMPLE + "!");
 
-        File folder = new File(".//config//servers");
-        File[] listOfFiles = folder.listFiles();
-        boolean hasServerConfig = false; // Flag to check if any other config files are found
-
-        // Iterate through the files and check for .properties files other than server_example.properties
-        for (int i = 0; i < listOfFiles.length; i++) {
-            if (listOfFiles[i].isFile() && listOfFiles[i].getName().endsWith(".properties") && !listOfFiles[i].getName().equals("server_example.properties")) {
-                hasServerConfig = true; // Set flag to true if a valid config is found
-                mainLogger.info("find server config: " + listOfFiles[i].getName());
-                CheckUpdateHandler updater = new CheckUpdateHandler(listOfFiles[i].getName());
-                checkUpdates[i] = updater;
-            }
+        List<CheckUpdateHandler> handlers = new ArrayList<>();
+        for (String configFile : configFiles) {
+            mainLogger.info("find server config: " + configFile);
+            handlers.add(new CheckUpdateHandler(configFile));
         }
 
-        // If no server config files are found other than server_example.properties, throw an exception
-        if (!hasServerConfig) {
-            throw new Exception("No server config files found other than server_example.properties!");
+        // 每台伺服器一條執行緒，上一輪 (含重啟倒數) 結束後才開始計算下一輪間隔
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(handlers.size());
+        for (int i = 0; i < handlers.size(); i++) {
+            CheckUpdateHandler handler = handlers.get(i);
+            // 錯開各伺服器的首次檢查，避免同時呼叫 Steam API
+            scheduler.scheduleWithFixedDelay(handler, i * 10L,
+                    handler.getServerConfig().getCheckFrequency(), TimeUnit.SECONDS);
         }
 
-        // Start update checks for all the valid server configurations
-        for (CheckUpdateHandler servers : checkUpdates) {
-            if (servers != null) {
-                servers.start();
-                Thread.sleep(10*1000L);
-            }
-        }
-
-        // Keep all threads running, remove finished ones and recreate them
-        while (true) {
-            boolean anyThreadRemovedOrRestarted = false;
-
-            // Check each thread if it has finished (is not alive). Restart only those that finished.
-            for (int i = 0; i < checkUpdates.length; i++) {
-                CheckUpdateHandler server = checkUpdates[i];
-                if (server != null && !server.isAlive()) {
-                    // Thread is not alive (ended), remove it and restart it
-                    mainLogger.debug("Thread for server " + server.getServerConfig().getServerName() + " has ended. Removing and restarting...");
-                    // Recreate the thread for the server
-                    checkUpdates[i] = new CheckUpdateHandler(server.getConfigDir());
-                    checkUpdates[i].start();  // Start the new thread
-                    anyThreadRemovedOrRestarted = true;  // Indicate that at least one thread was restarted
-                    Thread.sleep(10 * 1000L);  // Wait before checking the next thread
-                }
-            }
-
-            // If no threads were removed or restarted, wait before checking again
-            if (!anyThreadRemovedOrRestarted) {
-                mainLogger.trace("No threads need to be restarted at this moment");
-                Thread.sleep(10 * 1000L);  // Sleep for a bit before checking again
-            }
-        }
-    }
-
-    //Not use yet
-    public static void setUpLog4j() throws IOException {
-        File configFile = new File("config/log4j2.xml");
-        if (!configFile.exists()) {
-            // If it does not exist, copy the resource file from the JAR
-            try (InputStream resourceStream = Config.class.getClassLoader().getResourceAsStream("log4j2.xml")) {
-                if (resourceStream == null) {
-                    throw new FileNotFoundException("Resource log4j2.xml not found in JAR!");
-                }
-
-                // Create directories if they do not exist
-                File configDir = new File(configFile.getParent());
-                if (!configDir.exists()) {
-                    configDir.mkdir();
-                }
-
-                // Copy the file from the JAR to the current directory
-                Files.copy(resourceStream, configFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                System.out.println("Config file copied from JAR resources.");
-            } catch (IOException ex) {
-                throw new IOException("Failed to copy log4j2.xml from JAR resources!", ex);
-            }
-        }
-
-        LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
-        File file = new File("Config/log4j2.xml");
-        context.setConfigLocation(file.toURI());
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            mainLogger.info("Shutting down.");
+            scheduler.shutdownNow();
+            if (MainBot.jda != null)
+                MainBot.jda.shutdown();
+        }));
     }
 }

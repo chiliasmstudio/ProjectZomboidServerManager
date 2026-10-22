@@ -20,10 +20,10 @@ package com.chiliasmstudio.ProjectZomboidServerManager.function.projectzomboid;
 
 import com.chiliasmstudio.ProjectZomboidServerManager.ServerConfig;
 import com.chiliasmstudio.ProjectZomboidServerManager.lib.Util.Discord.DiscordNotifier;
+import com.chiliasmstudio.ProjectZomboidServerManager.lib.Util.Discord.RestartEmbed;
 import com.chiliasmstudio.ProjectZomboidServerManager.lib.Util.Rcon.RconCommandHandler;
 import com.chiliasmstudio.ProjectZomboidServerManager.lib.Util.Steam.SteamAPI;
 import lombok.Getter;
-import net.kronos.rkon.core.Rcon;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -36,7 +36,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CheckUpdateHandler extends Thread {
+public class CheckUpdateHandler implements Runnable {
     // 伺服器設定。
     @Getter
     private final ServerConfig serverConfig = new ServerConfig();
@@ -59,14 +59,18 @@ public class CheckUpdateHandler extends Thread {
         serverLogger.info("Server config loaded");
     }
 
+    /**
+     * 由排程器依 CheckFrequency 週期呼叫。
+     * 必須攔截所有例外，否則 ScheduledExecutorService 會停止後續排程。
+     */
+    @Override
     public void run() {
         try {
             checkOnce();
-            serverLogger.debug("Check end, waiting " + serverConfig.getCheckFrequency() + " second");
-            Thread.sleep(serverConfig.getCheckFrequency() * 1000L);
+            serverLogger.debug("Check end, next check in " + serverConfig.getCheckFrequency() + " second");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             serverLogger.error("Unexpected error on check.", e);
         }
     }
@@ -120,24 +124,18 @@ public class CheckUpdateHandler extends Thread {
      */
     private void restartServer(List<JSONObject> updateList) throws InterruptedException {
         long channel = serverConfig.getDiscordChannel();
-        DiscordNotifier.send(channel, serverConfig.getServerName() + " need reboot! restart in 10 minute.");
-        StringBuilder mods = new StringBuilder("Mod to update:");
-        for (JSONObject item : updateList)
-            mods.append("\n<https://steamcommunity.com/sharedfiles/filedetails/?id=")
-                    .append(item.optString("publishedfileid")).append(">");
-        DiscordNotifier.send(channel, mods.toString());
+        boolean debugMode = serverConfig.isDebugSkipRestartDelay();
+        List<RestartEmbed.Mod> mods = updateList.stream()
+                .map(item -> new RestartEmbed.Mod(item.optString("publishedfileid"), item.optString("title")))
+                .toList();
+        DiscordNotifier.sendEmbed(channel, RestartEmbed.build(
+                serverConfig.getServerName(), debugMode ? "10 秒" : "10 分鐘", debugMode, mods, null));
 
         rconCommandHandler = new RconCommandHandler(serverConfig);
-        try {
-            rconCommandHandler.connect();
-        } catch (Exception e) {
-            serverLogger.error("Unable to connect rcon, countdown message will not be shown in game.", e);
-        }
-
         broadcast("Server need reboot! restart in 10 minute.");
 
         // 除錯模式下略過長倒數，10 秒後直接重啟
-        if (serverConfig.isDebugSkipRestartDelay()) {
+        if (debugMode) {
             broadcast("Server need reboot! restart in 10 seconds (debug mode).");
             Thread.sleep(10 * 1000L);
         } else {
@@ -151,13 +149,18 @@ public class CheckUpdateHandler extends Thread {
             broadcast("Server need reboot! restart in 10 second.");
             Thread.sleep(10 * 1000L);
         }
-        rconCommandHandler.disConnect();
 
         DiscordNotifier.send(channel, serverConfig.getServerName() + " rebooting!");
         serverLogger.info("Stopping server.");
-        closeServer();
+        if (rconCommandHandler.send("quit")) {
+            DiscordNotifier.send(channel, serverConfig.getServerName() + " has stop.");
+            serverLogger.info("Server has stop.");
+        } else {
+            serverLogger.error("Failed to send quit via rcon.");
+        }
+        rconCommandHandler.disConnect();
+        // 等待伺服器完全關閉，再進行下一次檢查
         Thread.sleep(60 * 1000L);
-        serverLogger.info("Server has stop.");
     }
 
     /**
@@ -167,24 +170,6 @@ public class CheckUpdateHandler extends Thread {
         serverLogger.info(message);
         if (!rconCommandHandler.sendMessage(message))
             serverLogger.warn("Failed to broadcast via rcon: " + message);
-    }
-
-    /**
-     * 透過新的 Rcon 連線送出 quit 指令關閉伺服器。
-     *
-     * @return 是否成功送出。
-     */
-    private boolean closeServer() {
-        try {
-            Rcon rcon = new Rcon(serverConfig.getRconIP(), serverConfig.getRconPort(), serverConfig.getRconPassword().getBytes());
-            rcon.command("quit");
-            rcon.disconnect();
-            DiscordNotifier.send(serverConfig.getDiscordChannel(), serverConfig.getServerName() + " has stop.");
-            return true;
-        } catch (Exception e) {
-            serverLogger.error("Failed to send quit via rcon.", e);
-            return false;
-        }
     }
 
     /**

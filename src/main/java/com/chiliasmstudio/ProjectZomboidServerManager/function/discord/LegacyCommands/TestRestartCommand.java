@@ -19,7 +19,7 @@
 package com.chiliasmstudio.ProjectZomboidServerManager.function.discord.LegacyCommands;
 
 import com.chiliasmstudio.ProjectZomboidServerManager.function.discord.SlashCommandProvider;
-import net.dv8tion.jda.api.EmbedBuilder;
+import com.chiliasmstudio.ProjectZomboidServerManager.lib.Util.Discord.RestartEmbed;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -27,40 +27,20 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 
-import java.awt.Color;
-import java.time.Instant;
+import java.util.List;
 
 public class TestRestartCommand extends ListenerAdapter implements SlashCommandProvider {
 
     /**
-     * 建構測試重啟的 MessageEmbed 卡片
+     * 以模擬資料建構測試重啟卡片，版面與實際更新通知共用 RestartEmbed。
      */
     private MessageEmbed buildRestartEmbed() {
-        EmbedBuilder embed = new EmbedBuilder();
-
-        // 標題與側邊顏色（警告橙紅色）
-        embed.setTitle("🔄 [測試] Project Zomboid 伺服器模組更新與重啟通知");
-        embed.setDescription("偵測到 Steam 工作坊模組有新版本發布，伺服器即將重新啟動以套用更新。");
-        embed.setColor(new Color(0xE67E22));
-
-        // 伺服器資訊欄位
-        embed.addField("伺服器名稱", "Noble TestNet 1", true);
-        embed.addField("預計重啟倒數", "10 分鐘", true);
-        embed.addField("除錯快速重啟", "已停用 (正常排程)", true);
-
-        // 模擬更新的模組列表 (Markdown 超連結格式)
-        String modUpdates = "• [Hydrocraft for v41](https://steamcommunity.com/sharedfiles/filedetails/?id=2778991696)\n" +
-                "• [Brita's Weapon Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=2200148440)\n" +
-                "• [Authentic Z - Current](https://steamcommunity.com/sharedfiles/filedetails/?id=2335368829)";
-        embed.addField("📦 待更新工作坊模組 (3)", modUpdates, false);
-
-        embed.addField("ℹ️ 說明", "此訊息為測試指令觸發產生的模擬重啟卡片。", false);
-
-        // 頁尾資訊與時間戳記
-        embed.setFooter("Project Zomboid Server Manager • 測試通知", null);
-        embed.setTimestamp(Instant.now());
-
-        return embed.build();
+        List<RestartEmbed.Mod> mods = List.of(
+                new RestartEmbed.Mod("2778991696", "Hydrocraft for v41"),
+                new RestartEmbed.Mod("2200148440", "Brita's Weapon Pack"),
+                new RestartEmbed.Mod("2335368829", "Authentic Z - Current"));
+        return RestartEmbed.build("Noble TestNet 1", "10 分鐘", false, mods,
+                "此訊息為測試指令觸發產生的模擬重啟卡片。");
     }
 
     /**
