@@ -67,7 +67,15 @@
                 <directory>${basedir}/src/main/resources</directory>
                 <includes>
                     <include>log4j2.xml</include>
-                    <include>**/*.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <!-- 將設定範本打包進 JAR，首次啟動時複製到工作目錄 -->
+                <directory>${basedir}/config</directory>
+                <targetPath>config</targetPath>
+                <includes>
+                    <include>config-example.properties</include>
+                    <include>servers/server_example.properties</include>
                 </includes>
             </resource>
         </resources>

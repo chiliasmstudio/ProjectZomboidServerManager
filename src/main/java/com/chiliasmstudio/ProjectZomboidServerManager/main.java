@@ -31,6 +31,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 
@@ -61,8 +62,8 @@ public class main {
         mainLogger.info("This is an info message, Hello world!");
         //mainLogger.error("This is an error message.");
 
-        Config.loadConfig(".//config//config.properties");
-        initialize(Config.DiscordToken);
+        Config.loadConfig(Path.of("config", "config.properties"));
+        initialize(Config.discordToken);
         Thread.sleep(5000L);
 
         loadServerConfig();

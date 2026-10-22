@@ -44,7 +44,7 @@ public class SteamAPI {
     public static ArrayList<Long> getCollectionDetail(Long collectionID){
         HttpPost httpPost = new HttpPost("https://api.steampowered.com/ISteamRemoteStorage/GetCollectionDetails/v1");
         List<NameValuePair> nvps = new ArrayList<>();
-        nvps.add(new BasicNameValuePair("key", Config.SteamKey));
+        nvps.add(new BasicNameValuePair("key", Config.steamKey));
         nvps.add(new BasicNameValuePair("format", "json"));
         nvps.add(new BasicNameValuePair("collectioncount", "1"));
         nvps.add(new BasicNameValuePair("publishedfileids[0]", collectionID.toString()));
@@ -83,7 +83,7 @@ public class SteamAPI {
     public static JSONArray getPublishedFileDetails(ArrayList<Long> itemList) {
         HttpPost httpPost = new HttpPost("https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?");
         List<NameValuePair> nvps = new ArrayList<>();
-        nvps.add(new BasicNameValuePair("key", Config.SteamKey));
+        nvps.add(new BasicNameValuePair("key", Config.steamKey));
         nvps.add(new BasicNameValuePair("format", "json"));
         nvps.add(new BasicNameValuePair("itemcount", String.valueOf(itemList.size())));
         for (int i = 0; i < itemList.size(); i++)

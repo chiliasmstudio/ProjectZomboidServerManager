@@ -52,7 +52,7 @@ public class CheckUpdateHandler extends Thread {
     private String configDir;
 
     public CheckUpdateHandler(String configDir) throws Exception {
-        serverConfig.loadConfig("config//servers//" + configDir);
+        serverConfig.loadConfig(java.nio.file.Path.of("config", "servers", configDir));
         serverLogger = LogManager.getLogger(serverConfig.getServerName());
         this.configDir = configDir;
         serverLogger.debug("Server config dir: " + configDir);

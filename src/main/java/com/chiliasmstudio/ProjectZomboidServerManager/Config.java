@@ -1,6 +1,6 @@
 /*
  * < ProjectZomboidServerMannger - Project Zomboid server manage software >
- *     Copyright (C) 2022-2024 chiliasmstudio
+ *     Copyright (C) 2022-2026 chiliasmstudio
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -18,75 +18,124 @@
 
 package com.chiliasmstudio.ProjectZomboidServerManager;
 
-import java.io.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.nio.file.Path;
 import java.util.Properties;
 
 public class Config {
     /**
-     * Load config value form config.properties.
-     *
-     * @param configFileDir Directory of config.
-     * @throws IOException When fail to load config.
-     * @throws Exception   When required argument is invalid.
+     * 主設定檔載入時使用的 Properties，保留下來供查詢指令開關。
      */
-    public static void loadConfig(String configFileDir) throws Exception {
-        // Check if the config file exists in the current directory
-        File configFile = new File(configFileDir);
-        if (!configFile.exists()) {
-            // If it does not exist, copy the resource file from the JAR
-            try (InputStream resourceStream = Config.class.getClassLoader().getResourceAsStream("config/config.properties")) {
-                if (resourceStream == null) {
-                    throw new FileNotFoundException("Resource config/config.properties not found in JAR!");
-                }
+    private static Properties properties = new Properties();
 
-                // Create directories if they do not exist
-                File configDir = new File(configFile.getParent());
-                if (!configDir.exists()) {
-                    configDir.mkdirs();
-                }
+    /**
+     * 從 config.properties 載入主設定。
+     * 若檔案不存在，會先從 JAR 內複製範本。
+     *
+     * @param configFile 主設定檔路徑。
+     * @throws IOException     讀取或複製設定檔失敗時。
+     * @throws ConfigException 必要設定值缺漏或格式錯誤時。
+     */
+    public static void loadConfig(Path configFile) throws IOException {
+        copyResourceIfMissing("config/config-example.properties", configFile);
 
-                // Copy the file from the JAR to the current directory
-                Files.copy(resourceStream, configFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                System.out.println("Config file copied from JAR resources.");
-            } catch (IOException ex) {
-                throw new IOException("Failed to copy config file from JAR resources!", ex);
-            }
-        }
-
-        Properties properties = new Properties();
-        properties.load(new FileInputStream(configFileDir));
-
-        DiscordToken = properties.getProperty("DiscordToken", "");
-        if (DiscordToken == null || DiscordToken.isEmpty())
-            throw new Exception("Discord Token not found!");
-
-        SteamKey = properties.getProperty("SteamKey", "");
-        if (SteamKey == null || SteamKey.isEmpty())
-            throw new Exception("SteamKey not found!");
-
-        String ServersLine = properties.getProperty("Servers", "");
-        Servers.addAll(Arrays.asList(ServersLine.split(";")));
-        if (Servers == null || Servers.isEmpty())
-            throw new Exception("Servers not found!");
+        properties = readProperties(configFile);
+        discordToken = requireString(properties, "DiscordToken");
+        steamKey = requireString(properties, "SteamKey");
     }
 
     /**
-     * Token of discord bot.
+     * 查詢某個 Discord 指令是否啟用，鍵名即為指令類別名稱 (例如 LuCat = true)。
+     * 未設定時預設為停用。
+     *
+     * @param commandName 指令類別名稱。
+     * @return 是否啟用。
      */
-    public static String DiscordToken = "";
+    public static boolean isCommandEnabled(String commandName) {
+        return Boolean.parseBoolean(properties.getProperty(commandName, "false").trim());
+    }
 
     /**
-     * Steam Web API key.
+     * 若目標檔案不存在，從 JAR 資源複製一份。
+     *
+     * @param resourcePath JAR 內資源路徑。
+     * @param target       目標檔案路徑。
      */
-    public static String SteamKey = "";
+    public static void copyResourceIfMissing(String resourcePath, Path target) throws IOException {
+        if (Files.exists(target))
+            return;
+        try (InputStream resourceStream = Config.class.getClassLoader().getResourceAsStream(resourcePath)) {
+            if (resourceStream == null)
+                throw new FileNotFoundException("Resource " + resourcePath + " not found in JAR!");
+            if (target.getParent() != null)
+                Files.createDirectories(target.getParent());
+            Files.copy(resourceStream, target);
+        }
+    }
 
     /**
-     * Servers to manage.
+     * 以 UTF-8 讀取 properties 檔，避免中文值變成亂碼。
      */
-    public static ArrayList<String> Servers = new ArrayList<>();
+    public static Properties readProperties(Path file) throws IOException {
+        Properties result = new Properties();
+        try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+            result.load(reader);
+        }
+        return result;
+    }
 
+    /**
+     * 讀取必要的字串設定，缺漏時拋出包含鍵名的例外。
+     */
+    public static String requireString(Properties props, String key) {
+        String value = props.getProperty(key, "").trim();
+        if (value.isEmpty())
+            throw new ConfigException("Required config \"" + key + "\" is missing or empty!");
+        return value;
+    }
+
+    /**
+     * 讀取必要的整數設定，缺漏或格式錯誤時拋出包含鍵名的例外。
+     */
+    public static long requireLong(Properties props, String key) {
+        String value = requireString(props, key);
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            throw new ConfigException("Config \"" + key + "\" must be a number, but got \"" + value + "\"!");
+        }
+    }
+
+    /**
+     * 讀取選填的整數設定，未設定時回傳預設值。
+     */
+    public static long optionalLong(Properties props, String key, long defaultValue) {
+        if (props.getProperty(key, "").trim().isEmpty())
+            return defaultValue;
+        return requireLong(props, key);
+    }
+
+    /**
+     * 設定檔內容錯誤。
+     */
+    public static class ConfigException extends RuntimeException {
+        public ConfigException(String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * Discord Bot 的 Token。
+     */
+    public static String discordToken = "";
+
+    /**
+     * Steam Web API 金鑰。
+     */
+    public static String steamKey = "";
 }

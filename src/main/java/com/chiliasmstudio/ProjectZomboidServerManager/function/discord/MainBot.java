@@ -1,6 +1,6 @@
 /*
  * < ProjectZomboidServerMannger - Project Zomboid server manage software >
- *     Copyright (C) 2022-2024 chiliasmstudio
+ *     Copyright (C) 2022-2026 chiliasmstudio
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 
 package com.chiliasmstudio.ProjectZomboidServerManager.function.discord;
 
+import com.chiliasmstudio.ProjectZomboidServerManager.Config;
 import com.chiliasmstudio.ProjectZomboidServerManager.function.discord.LegacyCommands.HelloWorld;
 import com.chiliasmstudio.ProjectZomboidServerManager.function.discord.LegacyCommands.TestCommand;
 import com.chiliasmstudio.ProjectZomboidServerManager.function.discord.LegacyCommands.TestRestartCommand;
@@ -25,32 +26,60 @@ import com.chiliasmstudio.ProjectZomboidServerManager.function.discord.SlashComm
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.util.List;
 
 public class MainBot {
+    private static final Logger botLogger = LogManager.getLogger("MainBot");
     public static JDABuilder botBuilder = null;
     public static JDA jda = null;
 
     /**
-     * Initialization bot.
-     *
-     * @param DiscordToken Token of discord bot.
+     * 所有可用的 Discord 指令，需在 config.properties 以類別名稱開啟 (例如 LuCat = true)。
      */
-    public static boolean initialize(String DiscordToken) {
+    private static final List<ListenerAdapter> AVAILABLE_COMMANDS = List.of(
+            new LuCat(),
+            new HelloWorld(),
+            new TestCommand(),
+            new TestRestartCommand()
+    );
+
+    /**
+     * 會讀取訊息內容的文字指令，啟用任一個時才需要 MESSAGE_CONTENT 特權 intent。
+     */
+    private static final List<Class<?>> TEXT_COMMANDS = List.of(
+            HelloWorld.class, TestCommand.class, TestRestartCommand.class);
+
+    /**
+     * 初始化 Bot。
+     *
+     * @param discordToken Discord Bot 的 Token。
+     */
+    public static boolean initialize(String discordToken) {
         try {
-            botBuilder = JDABuilder.createDefault(DiscordToken);
+            botBuilder = JDABuilder.createDefault(discordToken);
             botBuilder.setActivity(Activity.playing("Hello discord!"));
-            botBuilder.enableIntents(GatewayIntent.MESSAGE_CONTENT);
 
-            botBuilder.addEventListeners(new LuCat());
-
-            botBuilder.addEventListeners(new HelloWorld());
-            botBuilder.addEventListeners(new TestCommand());
-            botBuilder.addEventListeners(new TestRestartCommand());
+            boolean needMessageContent = false;
+            for (ListenerAdapter command : AVAILABLE_COMMANDS) {
+                String name = command.getClass().getSimpleName();
+                if (!Config.isCommandEnabled(name))
+                    continue;
+                botBuilder.addEventListeners(command);
+                botLogger.info("Discord command enabled: " + name);
+                if (TEXT_COMMANDS.contains(command.getClass()))
+                    needMessageContent = true;
+            }
+            if (needMessageContent)
+                botBuilder.enableIntents(GatewayIntent.MESSAGE_CONTENT);
 
             jda = botBuilder.build();
         } catch (Exception e) {
-            e.printStackTrace();
+            botLogger.error("Failed to initialize discord bot.", e);
             return false;
         }
         return true;

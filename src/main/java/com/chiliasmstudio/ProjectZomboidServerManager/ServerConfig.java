@@ -1,6 +1,6 @@
 /*
  * < ProjectZomboidServerMannger - Project Zomboid server manage software >
- *     Copyright (C) 2022-2024 chiliasmstudio
+ *     Copyright (C) 2022-2026 chiliasmstudio
  *
  *     This program is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
@@ -19,111 +19,113 @@
 package com.chiliasmstudio.ProjectZomboidServerManager;
 
 import lombok.Getter;
-import lombok.Setter;
 
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.time.DateTimeException;
+import java.time.ZoneId;
 import java.util.Properties;
 
+import static com.chiliasmstudio.ProjectZomboidServerManager.Config.*;
+
+@Getter
 public class ServerConfig {
     /**
-     * Load config value form config.properties.
+     * 從伺服器設定檔載入設定值。
      *
-     * @param configFileDir Directory of config.
-     * @throws IOException When fail to load config.
-     * @throws Exception   When required argument is invalid.
+     * @param configFile 伺服器設定檔路徑。
+     * @throws IOException            讀取失敗時。
+     * @throws Config.ConfigException 必要設定值缺漏或格式錯誤時。
      */
-    public void loadConfig(String configFileDir) throws Exception {
-        Properties properties = new Properties();
-        properties.load(new FileInputStream(configFileDir));
+    public void loadConfig(Path configFile) throws IOException {
+        Properties properties = readProperties(configFile);
 
         //-------- Basic -------
-        ServerName = properties.getProperty("ServerName", "");
-        if (ServerName == null || ServerName.isEmpty())
-            throw new Exception("ServerName not found!");
+        serverName = requireString(properties, "ServerName");
 
-        SteamCollections = Long.valueOf(properties.getProperty("SteamCollections", ""));
-        if (SteamCollections < 0)
-            throw new Exception("SteamCollections not found!");
+        steamCollections = requireLong(properties, "SteamCollections");
+        if (steamCollections <= 0)
+            throw new ConfigException("SteamCollections must be a positive workshop id!");
 
-        CheckFrequency = Long.valueOf(properties.getProperty("CheckFrequency", ""));
-        if (CheckFrequency <= 0)
-            throw new Exception("CheckFrequency not found!");
-        //else if (CheckFrequency < 60)
+        checkFrequency = requireLong(properties, "CheckFrequency");
+        if (checkFrequency <= 0)
+            throw new ConfigException("CheckFrequency must be greater than 0!");
+
+        String timeZoneValue = properties.getProperty("TimeZone", "auto").trim();
+        try {
+            timeZone = timeZoneValue.isEmpty() || timeZoneValue.equalsIgnoreCase("auto")
+                    ? ZoneId.systemDefault()
+                    : ZoneId.of(timeZoneValue);
+        } catch (DateTimeException e) {
+            throw new ConfigException("TimeZone \"" + timeZoneValue + "\" is not a valid TZ database name!");
+        }
 
         //-------- Rcon --------
-        RconIP = properties.getProperty("RconIP", "");
-        if (RconIP == null || RconIP.isEmpty())
-            throw new Exception("ServerIP not found!");
+        rconIP = requireString(properties, "RconIP");
 
-        RconPort = Integer.parseInt(properties.getProperty("RconPort", ""));
-        if (RconPort < 0 || RconPort > 65535)
-            throw new Exception("RconPort not found!");
+        long port = requireLong(properties, "RconPort");
+        if (port < 1 || port > 65535)
+            throw new ConfigException("RconPort must be between 1 and 65535!");
+        rconPort = (int) port;
 
-        RconPassword = properties.getProperty("RconPassword", "");
-        if (RconPassword == null || RconPassword.isEmpty())
-            throw new Exception("RconPassword not found!");
+        rconPassword = requireString(properties, "RconPassword");
 
         //-------- Discord --------
-        DiscordChannel = Long.valueOf(properties.getProperty("DiscordChannel", ""));
+        discordChannel = optionalLong(properties, "DiscordChannel", 0L);
 
         //-------- Debug --------
         debugSkipRestartDelay = Boolean.parseBoolean(
-                properties.getProperty("debugSkipRestartDelay", "false"));
+                properties.getProperty("debugSkipRestartDelay", "false").trim());
     }
 
 
     //-------- Basic --------
     /**
-     * Server name.
+     * 伺服器名稱。
      */
-    @Getter
-    private String ServerName = "";
+    private String serverName = "";
 
     /**
-     * Steam collections id.
+     * Steam 工作坊合集 ID。
      */
-    @Getter
-    private Long SteamCollections = -1L;
+    private long steamCollections = -1L;
 
     /**
-     * CheckFrequency.
+     * 檢查更新的間隔 (秒)。
      */
-    @Getter
-    private Long CheckFrequency = -1L;
+    private long checkFrequency = -1L;
+
+    /**
+     * 主控台與 Discord 顯示時間所使用的時區。
+     */
+    private ZoneId timeZone = ZoneId.systemDefault();
 
     //-------- Rcon --------
     /**
-     * Server rcon ip.
+     * 伺服器 Rcon IP。
      */
-    @Getter
-    private String RconIP = "";
+    private String rconIP = "";
 
     /**
-     * Server rcon port.
+     * 伺服器 Rcon 連接埠。
      */
-    @Getter
-    private int RconPort = -1;
+    private int rconPort = -1;
 
     /**
-     * Server rcon password.
+     * 伺服器 Rcon 密碼。
      */
-    @Getter
-    private String RconPassword = "";
+    private String rconPassword = "";
 
     //-------- Discord --------
     /**
-     * Discord Channel that send notify. (optional).
+     * 發送通知的 Discord 頻道 (選填，0 表示不發送)。
      */
-    @Getter
-    private Long DiscordChannel = 0L;
+    private long discordChannel = 0L;
 
     //-------- Debug --------
     /**
-     * Debug flag to skip long restart countdown delay (5m, 1m, 30s, 10s)
-     * and restart the server directly after 10 seconds.
+     * 除錯用：略過 5 分鐘、1 分鐘、30 秒、10 秒的重啟倒數，
+     * 直接在 10 秒後重啟伺服器。
      */
-    @Getter
-    @Setter
     private boolean debugSkipRestartDelay = false;
 }
