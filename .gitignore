@@ -1,2 +1,10 @@
 /target/
 opencode.json
+# 執行期產生的檔案
+/logs/
+/data/
+
+# 建置產物與工具檔
+*.jar
+pom.xml.versionsBackup
+.idea/
