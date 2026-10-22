@@ -20,6 +20,7 @@ package com.chiliasmstudio.ProjectZomboidServeManager.function.discord;
 
 import com.chiliasmstudio.ProjectZomboidServeManager.function.discord.LegacyCommands.HelloWorld;
 import com.chiliasmstudio.ProjectZomboidServeManager.function.discord.LegacyCommands.TestCommand;
+import com.chiliasmstudio.ProjectZomboidServeManager.function.discord.LegacyCommands.TestRestartCommand;
 import com.chiliasmstudio.ProjectZomboidServeManager.function.discord.SlashCommands.LuCat;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -45,6 +46,7 @@ public class MainBot {
 
             botBuilder_Main.addEventListeners(new HelloWorld());
             botBuilder_Main.addEventListeners(new TestCommand());
+            botBuilder_Main.addEventListeners(new TestRestartCommand());
 
             bot_Main = botBuilder_Main.build();
         } catch (Exception e) {
