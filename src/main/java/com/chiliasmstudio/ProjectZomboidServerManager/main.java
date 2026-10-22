@@ -33,7 +33,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.time.Instant;
 
 
 import static com.chiliasmstudio.ProjectZomboidServerManager.function.discord.MainBot.initialize;
@@ -83,7 +82,6 @@ public class main {
                 hasServerConfig = true; // Set flag to true if a valid config is found
                 mainLogger.info("find server config: " + listOfFiles[i].getName());
                 CheckUpdateHandler updater = new CheckUpdateHandler(listOfFiles[i].getName());
-                updater.setUnixTimestamp(Instant.now().getEpochSecond());
                 checkUpdates[i] = updater;
             }
         }
@@ -113,8 +111,6 @@ public class main {
                     mainLogger.debug("Thread for server " + server.getServerConfig().getServerName() + " has ended. Removing and restarting...");
                     // Recreate the thread for the server
                     checkUpdates[i] = new CheckUpdateHandler(server.getConfigDir());
-                    // Reload the check time
-                    checkUpdates[i].setUnixTimestamp(server.getUnixTimestamp());
                     checkUpdates[i].start();  // Start the new thread
                     anyThreadRemovedOrRestarted = true;  // Indicate that at least one thread was restarted
                     Thread.sleep(10 * 1000L);  // Wait before checking the next thread

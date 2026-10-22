@@ -81,6 +81,8 @@ public class SteamAPI {
      * Get and return workshop item info in json.
      */
     public static JSONArray getPublishedFileDetails(ArrayList<Long> itemList) {
+        if (itemList == null || itemList.isEmpty())
+            return null;
         HttpPost httpPost = new HttpPost("https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?");
         List<NameValuePair> nvps = new ArrayList<>();
         nvps.add(new BasicNameValuePair("key", Config.steamKey));
