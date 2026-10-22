@@ -16,21 +16,14 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.chiliasmstudio.ProjectZomboidServeManager.lib.Util.Discord;
+package com.chiliasmstudio.ProjectZomboidServerManager.function.projectzomboid;
 
-import net.dv8tion.jda.api.entities.Message;
+import java.util.concurrent.Callable;
 
-import java.util.concurrent.TimeUnit;
-
-public class Utils {
-
-    /**
-     * Send message and delete after delay.
-     *
-     * @param message Message to send.
-     * @param delay   Second before delete message.
-     */
-    public static void deleteAfter(Message message, int delay) {
-        message.delete().queueAfter(delay, TimeUnit.SECONDS);
+//TODO start by command
+public class StartServer implements Callable<Boolean>{
+    public Boolean call() throws InterruptedException {
+        Thread.sleep(30000);
+        return true;
     }
 }

@@ -16,7 +16,7 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.chiliasmstudio.ProjectZomboidServeManager.function.discord.SlashCommands;
+package com.chiliasmstudio.ProjectZomboidServerManager.function.discord.SlashCommands;
 
 import net.dv8tion.jda.api.events.guild.GuildReadyEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;

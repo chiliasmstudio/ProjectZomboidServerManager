@@ -20,7 +20,7 @@
             <AppenderRef ref="FileAppender"/>
         </Root>
 
-        <Logger name="com.chiliasmstudio.ProjectZomboidServeManager" level="info" additivity="false">
+        <Logger name="com.chiliasmstudio.ProjectZomboidServerManager" level="info" additivity="false">
             <AppenderRef ref="ConsoleAppender"/>
         </Logger>
 

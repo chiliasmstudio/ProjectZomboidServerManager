@@ -95,7 +95,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>4.1.0</version>
                 <configuration>
-                    <mainClass>com.chiliasmstudio.ProjectZomboidServeManager.main</mainClass>
+                    <mainClass>com.chiliasmstudio.ProjectZomboidServerManager.main</mainClass>
                     <layout>ZIP</layout>
                 </configuration>
                 <executions>

@@ -16,9 +16,9 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.chiliasmstudio.ProjectZomboidServeManager.lib.Util.Steam;
+package com.chiliasmstudio.ProjectZomboidServerManager.lib.Util.Steam;
 
-import com.chiliasmstudio.ProjectZomboidServeManager.Config;
+import com.chiliasmstudio.ProjectZomboidServerManager.Config;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -41,7 +41,7 @@ public class SteamAPI {
     /**
      * Get and return workshop item ids in collection.
      */
-    public static ArrayList<Long> GetCollectionDetail(Long collectionID){
+    public static ArrayList<Long> getCollectionDetail(Long collectionID){
         HttpPost httpPost = new HttpPost("https://api.steampowered.com/ISteamRemoteStorage/GetCollectionDetails/v1");
         List<NameValuePair> nvps = new ArrayList<>();
         nvps.add(new BasicNameValuePair("key", Config.SteamKey));
@@ -80,7 +80,7 @@ public class SteamAPI {
     /**
      * Get and return workshop item info in json.
      */
-    public static JSONArray GetPublishedFileDetails(ArrayList<Long> itemList) {
+    public static JSONArray getPublishedFileDetails(ArrayList<Long> itemList) {
         HttpPost httpPost = new HttpPost("https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?");
         List<NameValuePair> nvps = new ArrayList<>();
         nvps.add(new BasicNameValuePair("key", Config.SteamKey));

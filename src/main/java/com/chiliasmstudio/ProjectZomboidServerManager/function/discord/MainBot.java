@@ -16,39 +16,39 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.chiliasmstudio.ProjectZomboidServeManager.function.discord;
+package com.chiliasmstudio.ProjectZomboidServerManager.function.discord;
 
-import com.chiliasmstudio.ProjectZomboidServeManager.function.discord.LegacyCommands.HelloWorld;
-import com.chiliasmstudio.ProjectZomboidServeManager.function.discord.LegacyCommands.TestCommand;
-import com.chiliasmstudio.ProjectZomboidServeManager.function.discord.LegacyCommands.TestRestartCommand;
-import com.chiliasmstudio.ProjectZomboidServeManager.function.discord.SlashCommands.LuCat;
+import com.chiliasmstudio.ProjectZomboidServerManager.function.discord.LegacyCommands.HelloWorld;
+import com.chiliasmstudio.ProjectZomboidServerManager.function.discord.LegacyCommands.TestCommand;
+import com.chiliasmstudio.ProjectZomboidServerManager.function.discord.LegacyCommands.TestRestartCommand;
+import com.chiliasmstudio.ProjectZomboidServerManager.function.discord.SlashCommands.LuCat;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 
 public class MainBot {
-    public static JDABuilder botBuilder_Main = null;
-    public static JDA bot_Main = null;
+    public static JDABuilder botBuilder = null;
+    public static JDA jda = null;
 
     /**
      * Initialization bot.
      *
      * @param DiscordToken Token of discord bot.
      */
-    public static boolean initialization_Main(String DiscordToken) {
+    public static boolean initialize(String DiscordToken) {
         try {
-            botBuilder_Main = JDABuilder.createDefault(DiscordToken);
-            botBuilder_Main.setActivity(Activity.playing("Hello discord!"));
-            botBuilder_Main.enableIntents(GatewayIntent.MESSAGE_CONTENT);
+            botBuilder = JDABuilder.createDefault(DiscordToken);
+            botBuilder.setActivity(Activity.playing("Hello discord!"));
+            botBuilder.enableIntents(GatewayIntent.MESSAGE_CONTENT);
 
-            botBuilder_Main.addEventListeners(new LuCat());
+            botBuilder.addEventListeners(new LuCat());
 
-            botBuilder_Main.addEventListeners(new HelloWorld());
-            botBuilder_Main.addEventListeners(new TestCommand());
-            botBuilder_Main.addEventListeners(new TestRestartCommand());
+            botBuilder.addEventListeners(new HelloWorld());
+            botBuilder.addEventListeners(new TestCommand());
+            botBuilder.addEventListeners(new TestRestartCommand());
 
-            bot_Main = botBuilder_Main.build();
+            jda = botBuilder.build();
         } catch (Exception e) {
             e.printStackTrace();
             return false;

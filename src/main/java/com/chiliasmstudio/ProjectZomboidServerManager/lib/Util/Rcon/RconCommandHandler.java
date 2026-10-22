@@ -16,9 +16,9 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.chiliasmstudio.ProjectZomboidServeManager.lib.Util.Rcon;
+package com.chiliasmstudio.ProjectZomboidServerManager.lib.Util.Rcon;
 
-import com.chiliasmstudio.ProjectZomboidServeManager.ServerConfig;
+import com.chiliasmstudio.ProjectZomboidServerManager.ServerConfig;
 import net.kronos.rkon.core.Rcon;
 
 public class RconCommandHandler {

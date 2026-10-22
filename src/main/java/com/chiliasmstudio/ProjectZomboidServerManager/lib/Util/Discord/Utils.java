@@ -16,12 +16,21 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.chiliasmstudio.ProjectZomboidServeManager.lib.Util.Discord;
+package com.chiliasmstudio.ProjectZomboidServerManager.lib.Util.Discord;
 
-public class Emote {
-    public static final String Logo_ProjectZomboid = "<:Logo_ProjectZomboid:1004025758664097933>";//<:pz:963361244436381716>
+import net.dv8tion.jda.api.entities.Message;
 
-    public static final String Logo_Phoenix = "<:Logo_Phoenix:1115229600155447296>";//<:Logo_Phoenix:1115229600155447296>
+import java.util.concurrent.TimeUnit;
+
+public class Utils {
+
+    /**
+     * Send message and delete after delay.
+     *
+     * @param message Message to send.
+     * @param delay   Second before delete message.
+     */
+    public static void deleteAfter(Message message, int delay) {
+        message.delete().queueAfter(delay, TimeUnit.SECONDS);
+    }
 }
-
-

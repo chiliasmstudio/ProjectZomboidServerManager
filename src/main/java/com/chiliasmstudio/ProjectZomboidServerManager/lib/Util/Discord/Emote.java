@@ -16,14 +16,12 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.chiliasmstudio.ProjectZomboidServeManager.function.projectzomboid;
+package com.chiliasmstudio.ProjectZomboidServerManager.lib.Util.Discord;
 
-import java.util.concurrent.Callable;
+public class Emote {
+    public static final String Logo_ProjectZomboid = "<:Logo_ProjectZomboid:1004025758664097933>";//<:pz:963361244436381716>
 
-//TODO start by command
-public class StartServer implements Callable<Boolean>{
-    public Boolean call() throws InterruptedException {
-        Thread.sleep(30000);
-        return true;
-    }
+    public static final String Logo_Phoenix = "<:Logo_Phoenix:1115229600155447296>";//<:Logo_Phoenix:1115229600155447296>
 }
+
+

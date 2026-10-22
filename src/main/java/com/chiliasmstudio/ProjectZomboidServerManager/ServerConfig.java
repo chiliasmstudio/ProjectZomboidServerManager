@@ -16,7 +16,7 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.chiliasmstudio.ProjectZomboidServeManager;
+package com.chiliasmstudio.ProjectZomboidServerManager;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -33,7 +33,7 @@ public class ServerConfig {
      * @throws IOException When fail to load config.
      * @throws Exception   When required argument is invalid.
      */
-    public void LoadConfig(String configFileDir) throws Exception {
+    public void loadConfig(String configFileDir) throws Exception {
         Properties properties = new Properties();
         properties.load(new FileInputStream(configFileDir));
 

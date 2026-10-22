@@ -16,7 +16,7 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.chiliasmstudio.ProjectZomboidServeManager;
+package com.chiliasmstudio.ProjectZomboidServerManager;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -33,7 +33,7 @@ public class Config {
      * @throws IOException When fail to load config.
      * @throws Exception   When required argument is invalid.
      */
-    public static void LoadConfig(String configFileDir) throws Exception {
+    public static void loadConfig(String configFileDir) throws Exception {
         // Check if the config file exists in the current directory
         File configFile = new File(configFileDir);
         if (!configFile.exists()) {

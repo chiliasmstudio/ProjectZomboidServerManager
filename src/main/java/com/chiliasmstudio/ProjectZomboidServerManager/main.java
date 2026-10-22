@@ -16,9 +16,9 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.chiliasmstudio.ProjectZomboidServeManager;
+package com.chiliasmstudio.ProjectZomboidServerManager;
 
-import com.chiliasmstudio.ProjectZomboidServeManager.function.projectzomboid.CheckUpdateHandler;
+import com.chiliasmstudio.ProjectZomboidServerManager.function.projectzomboid.CheckUpdateHandler;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -35,7 +35,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 
 
-import static com.chiliasmstudio.ProjectZomboidServeManager.function.discord.MainBot.initialization_Main;
+import static com.chiliasmstudio.ProjectZomboidServerManager.function.discord.MainBot.initialize;
 
 public class main {
     private static final Logger mainLogger = LogManager.getLogger("main");
@@ -55,20 +55,20 @@ public class main {
         }
 
 
-        //SetUpLog4j();
+        //setUpLog4j();
         mainLogger.trace("This is the trace message, Hello world!");
         mainLogger.debug("This is a debug message, Hello world!");
         mainLogger.info("This is an info message, Hello world!");
         //mainLogger.error("This is an error message.");
 
-        Config.LoadConfig(".//config//config.properties");
-        initialization_Main(Config.DiscordToken);
+        Config.loadConfig(".//config//config.properties");
+        initialize(Config.DiscordToken);
         Thread.sleep(5000L);
 
-        LoadServerConfig();
+        loadServerConfig();
     }
 
-    public static void LoadServerConfig() throws Exception {
+    public static void loadServerConfig() throws Exception {
         // Load the main configuration file
 
 
@@ -129,7 +129,7 @@ public class main {
     }
 
     //Not use yet
-    public static void SetUpLog4j() throws IOException {
+    public static void setUpLog4j() throws IOException {
         File configFile = new File("config/log4j2.xml");
         if (!configFile.exists()) {
             // If it does not exist, copy the resource file from the JAR

@@ -16,12 +16,12 @@
  *     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.chiliasmstudio.ProjectZomboidServeManager.function.projectzomboid;
+package com.chiliasmstudio.ProjectZomboidServerManager.function.projectzomboid;
 
-import com.chiliasmstudio.ProjectZomboidServeManager.ServerConfig;
-import com.chiliasmstudio.ProjectZomboidServeManager.lib.Util.Rcon.RconCommandHandler;
-import com.chiliasmstudio.ProjectZomboidServeManager.lib.Util.Steam.SteamAPI;
-import com.chiliasmstudio.ProjectZomboidServeManager.function.discord.MainBot;
+import com.chiliasmstudio.ProjectZomboidServerManager.ServerConfig;
+import com.chiliasmstudio.ProjectZomboidServerManager.lib.Util.Rcon.RconCommandHandler;
+import com.chiliasmstudio.ProjectZomboidServerManager.lib.Util.Steam.SteamAPI;
+import com.chiliasmstudio.ProjectZomboidServerManager.function.discord.MainBot;
 import lombok.Getter;
 import lombok.Setter;
 import net.kronos.rkon.core.Rcon;
@@ -52,7 +52,7 @@ public class CheckUpdateHandler extends Thread {
     private String configDir;
 
     public CheckUpdateHandler(String configDir) throws Exception {
-        serverConfig.LoadConfig("config//servers//" + configDir);
+        serverConfig.loadConfig("config//servers//" + configDir);
         serverLogger = LogManager.getLogger(serverConfig.getServerName());
         this.configDir = configDir;
         serverLogger.debug("Server config dir: " + configDir);
@@ -86,7 +86,7 @@ public class CheckUpdateHandler extends Thread {
 
                 try {
                     serverLogger.info(formattedDate(Instant.now().getEpochSecond()) + " (" + Instant.now().getEpochSecond() + ")" + " start check.");
-                    itemList = SteamAPI.GetPublishedFileDetails(SteamAPI.GetCollectionDetail(serverConfig.getSteamCollections()));
+                    itemList = SteamAPI.getPublishedFileDetails(SteamAPI.getCollectionDetail(serverConfig.getSteamCollections()));
                 } catch (NullPointerException e) {
                     e.printStackTrace();
                 }
@@ -117,13 +117,13 @@ public class CheckUpdateHandler extends Thread {
                 if (needRestart) {
 
                     //TODO WAIL FOR REPLACE
-                    MainBot.bot_Main.getTextChannelById(serverConfig.getDiscordChannel()).sendMessage(serverConfig.getServerName() + " need reboot! restart in 10 minute.").queue();
+                    MainBot.jda.getTextChannelById(serverConfig.getDiscordChannel()).sendMessage(serverConfig.getServerName() + " need reboot! restart in 10 minute.").queue();
 
-                    MainBot.bot_Main.getTextChannelById(serverConfig.getDiscordChannel()).sendMessage("Mod to update:").queue();
+                    MainBot.jda.getTextChannelById(serverConfig.getDiscordChannel()).sendMessage("Mod to update:").queue();
                     for (int i = 0; i < updateList.length(); i++) {
                         JSONObject element = updateList.getJSONObject(i);
                         String message = "https://steamcommunity.com/sharedfiles/filedetails/?id=" + element.get("publishedfileid");
-                        MainBot.bot_Main.getTextChannelById(serverConfig.getDiscordChannel()).sendMessage("<" + message + ">").setEmbeds(Collections.emptyList()).queue();
+                        MainBot.jda.getTextChannelById(serverConfig.getDiscordChannel()).sendMessage("<" + message + ">").setEmbeds(Collections.emptyList()).queue();
                     }
 
 
@@ -158,7 +158,7 @@ public class CheckUpdateHandler extends Thread {
                         rconCommandHandler.sendMessage("Server need reboot! restart in 10 second.");
                         serverLogger.info("Server need reboot! restart in 10 second.");
                     }
-                    MainBot.bot_Main.getTextChannelById(serverConfig.getDiscordChannel()).sendMessage(serverConfig.getServerName() + " rebooting!").queue();
+                    MainBot.jda.getTextChannelById(serverConfig.getDiscordChannel()).sendMessage(serverConfig.getServerName() + " rebooting!").queue();
                     serverLogger.info("Stopping server.");
 
                     closeServer();
@@ -168,7 +168,7 @@ public class CheckUpdateHandler extends Thread {
                     // Try to boot server.
                     //if (!startServer())
                     //    throw new RuntimeException();
-                    //SendLog("Boot ok.");
+                    //sendLog("Boot ok.");
 
                     // Wait until server is start.
                     //Thread.sleep(serverConfig.getRestartTime() * 1000L);
@@ -177,7 +177,7 @@ public class CheckUpdateHandler extends Thread {
                     //rconCommandHandler = new RconCommandHandler(serverConfig);
                     //if(!rconCommandHandler.connect())
                     //    throw new RuntimeException();
-                    //SendLog("Rcon ok.");
+                    //sendLog("Rcon ok.");
                 }
                 rconCommandHandler.disConnect();
                 serverLogger.debug("Check end, waiting "+serverConfig.getCheckFrequency()+" second");
@@ -205,7 +205,7 @@ public class CheckUpdateHandler extends Thread {
             }
 
             Process p = server.start();
-            MainBot.bot_Main.getTextChannelById(serverConfig.getDiscordChannel()).sendMessage(serverConfig.getServerName() + " is booting now.").queue();
+            MainBot.jda.getTextChannelById(serverConfig.getDiscordChannel()).sendMessage(serverConfig.getServerName() + " is booting now.").queue();
             return true;
         } catch (IOException e) {
             e.printStackTrace();//TODO Log4j
@@ -228,7 +228,7 @@ public class CheckUpdateHandler extends Thread {
             Rcon rcon = new Rcon(serverConfig.getRconIP(), serverConfig.getRconPort(), serverConfig.getRconPassword().getBytes());
             rcon.command("quit");
             rcon.disconnect();
-            MainBot.bot_Main.getTextChannelById(serverConfig.getDiscordChannel()).sendMessage(serverConfig.getServerName() + " has stop.").queue();
+            MainBot.jda.getTextChannelById(serverConfig.getDiscordChannel()).sendMessage(serverConfig.getServerName() + " has stop.").queue();
             return true;
         } catch (IOException e) {
             // Unable to connect to the server
@@ -267,7 +267,7 @@ public class CheckUpdateHandler extends Thread {
      *
      * @param obj Message to send.
      */
-    private void SendLog(Object obj) {
+    private void sendLog(Object obj) {
         System.out.println("[" + serverConfig.getServerName() + "] " + obj);
     }
 }
