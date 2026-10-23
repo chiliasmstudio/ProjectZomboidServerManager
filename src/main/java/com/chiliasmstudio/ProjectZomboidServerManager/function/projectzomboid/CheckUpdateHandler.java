@@ -77,7 +77,8 @@ public class CheckUpdateHandler implements Runnable {
     /**
      * 執行一次更新檢查，若有模組更新則倒數並關閉伺服器。
      * 只有在重啟流程完成後才會更新記錄，因此途中失敗時下一輪會重新偵測到同一批更新。
-     * 只有取得合集清單失敗才視為整輪失敗；個別模組查詢失敗時只略過該模組。
+     * Steam 請求失敗時會每 30 秒重試，共重試 3 次，仍失敗則略過本輪等待下次檢查。
+     * 個別模組查詢失敗 (result != 1) 時只略過該模組。
      */
     private void checkOnce() throws InterruptedException {
         long now = Instant.now().getEpochSecond();
@@ -85,11 +86,15 @@ public class CheckUpdateHandler implements Runnable {
 
         ArrayList<Long> collectionItems = SteamAPI.getCollectionDetail(serverConfig.getSteamCollections());
         if (collectionItems == null) {
-            serverLogger.error("Failed to get collection list, will retry next time.");
+            serverLogger.error("Failed to get collection list, wait for next check.");
             return;
         }
 
         JSONArray itemList = SteamAPI.getPublishedFileDetails(collectionItems);
+        if (itemList == null) {
+            serverLogger.error("Failed to get workshop item details, wait for next check.");
+            return;
+        }
         logSkippedItems(collectionItems, itemList);
 
         List<JSONObject> updateList = updateState.findUpdatedItems(itemList);

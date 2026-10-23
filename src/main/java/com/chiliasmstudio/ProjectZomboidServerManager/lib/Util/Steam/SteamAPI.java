@@ -35,19 +35,66 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class SteamAPI {
     private final static Logger SteamApiLogger = LogManager.getLogger("SteamAPI");
+
+    /**
+     * 請求失敗後的重試次數。
+     */
+    private static final int RETRY_COUNT = 3;
+
+    /**
+     * 每次重試前的等待時間 (毫秒)。
+     */
+    private static final long RETRY_INTERVAL_MS = 30 * 1000L;
+
+    /**
+     * 取得合集內的模組 ID，失敗時每 30 秒重試，共重試 3 次。
+     *
+     * @return 模組 ID 清單；全部失敗時回傳 null。
+     */
+    public static ArrayList<Long> getCollectionDetail(long collectionID) throws InterruptedException {
+        return withRetry("GetCollectionDetails", () -> requestCollectionDetail(collectionID));
+    }
+
+    /**
+     * 一次查詢所有模組的資訊，失敗時每 30 秒重試，共重試 3 次。
+     *
+     * @return 各模組的 publishedfiledetails；全部失敗時回傳 null。
+     */
+    public static JSONArray getPublishedFileDetails(List<Long> itemList) throws InterruptedException {
+        if (itemList == null || itemList.isEmpty())
+            return new JSONArray();
+        return withRetry("GetPublishedFileDetails", () -> requestPublishedFileDetails(itemList));
+    }
+
+    /**
+     * 執行請求，回傳 null 視為失敗並在間隔後重試。
+     */
+    private static <T> T withRetry(String apiName, Supplier<T> request) throws InterruptedException {
+        T result = request.get();
+        for (int retry = 1; result == null && retry <= RETRY_COUNT; retry++) {
+            SteamApiLogger.warn(apiName + " failed, retry " + retry + "/" + RETRY_COUNT + " in " + RETRY_INTERVAL_MS / 1000 + " seconds.");
+            Thread.sleep(RETRY_INTERVAL_MS);
+            result = request.get();
+        }
+        if (result == null)
+            SteamApiLogger.error(apiName + " failed after " + RETRY_COUNT + " retries, wait for next check.");
+        return result;
+    }
+
     /**
      * Get and return workshop item ids in collection.
      */
-    public static ArrayList<Long> getCollectionDetail(Long collectionID){
+    private static ArrayList<Long> requestCollectionDetail(long collectionID) {
         HttpPost httpPost = new HttpPost("https://api.steampowered.com/ISteamRemoteStorage/GetCollectionDetails/v1");
         List<NameValuePair> nvps = new ArrayList<>();
         nvps.add(new BasicNameValuePair("key", Config.steamKey));
         nvps.add(new BasicNameValuePair("format", "json"));
         nvps.add(new BasicNameValuePair("collectioncount", "1"));
-        nvps.add(new BasicNameValuePair("publishedfileids[0]", collectionID.toString()));
+        nvps.add(new BasicNameValuePair("publishedfileids[0]", String.valueOf(collectionID)));
         httpPost.setEntity(new UrlEncodedFormEntity(nvps));
         ArrayList<Long> itemList = new ArrayList<Long>();
         
@@ -76,34 +123,9 @@ public class SteamAPI {
             }
             return itemList;
         } catch (Exception e) {
-            SteamApiLogger.error("Failed to get collection details for collectionID: " + collectionID, e);
+            SteamApiLogger.warn("Failed to get collection details for collectionID " + collectionID + ": " + e);
             return null;
         }
-    }
-
-    /**
-     * 每次請求查詢的模組數量上限。
-     */
-    private static final int DETAILS_BATCH_SIZE = 100;
-
-    /**
-     * 分批查詢模組資訊並合併結果。
-     * 某一批請求失敗時只略過該批模組，回傳其餘成功的結果；不會回傳 null。
-     *
-     * @param itemList 模組 ID 清單。
-     * @return 各模組的 publishedfiledetails (可能少於輸入數量)。
-     */
-    public static JSONArray getPublishedFileDetails(List<Long> itemList) {
-        JSONArray result = new JSONArray();
-        if (itemList == null)
-            return result;
-        for (int from = 0; from < itemList.size(); from += DETAILS_BATCH_SIZE) {
-            List<Long> batch = itemList.subList(from, Math.min(from + DETAILS_BATCH_SIZE, itemList.size()));
-            JSONArray details = requestPublishedFileDetails(batch);
-            if (details != null)
-                details.forEach(result::put);
-        }
-        return result;
     }
 
     /**
@@ -133,7 +155,7 @@ public class SteamAPI {
 
             return publishedfiledetails;
         } catch (Exception e) {
-            SteamApiLogger.error("Failed to get published file details for " + itemList.size() + " items", e);
+            SteamApiLogger.warn("Failed to get published file details for " + itemList.size() + " items: " + e);
             return null;
         }
     }
