@@ -66,9 +66,13 @@ public class SteamAPI {
                     .getJSONObject(0)
                     .getJSONArray("children");
             //System.out.println(collectionID + " include " + collectiondetails.length() + " items");
+            // 單一項目格式錯誤時只略過該項目，不影響整份清單
             for (int i = 0; i < collectiondetails.length(); i++) {
-                String publishedfileid = collectiondetails.getJSONObject(i).getString("publishedfileid");
-                itemList.add(Long.parseLong(publishedfileid));
+                try {
+                    itemList.add(Long.parseLong(collectiondetails.getJSONObject(i).getString("publishedfileid")));
+                } catch (Exception e) {
+                    SteamApiLogger.warn("Skip invalid item #" + i + " in collection " + collectionID + ": " + e.getMessage());
+                }
             }
             return itemList;
         } catch (Exception e) {
@@ -78,11 +82,34 @@ public class SteamAPI {
     }
 
     /**
+     * 每次請求查詢的模組數量上限。
+     */
+    private static final int DETAILS_BATCH_SIZE = 100;
+
+    /**
+     * 分批查詢模組資訊並合併結果。
+     * 某一批請求失敗時只略過該批模組，回傳其餘成功的結果；不會回傳 null。
+     *
+     * @param itemList 模組 ID 清單。
+     * @return 各模組的 publishedfiledetails (可能少於輸入數量)。
+     */
+    public static JSONArray getPublishedFileDetails(List<Long> itemList) {
+        JSONArray result = new JSONArray();
+        if (itemList == null)
+            return result;
+        for (int from = 0; from < itemList.size(); from += DETAILS_BATCH_SIZE) {
+            List<Long> batch = itemList.subList(from, Math.min(from + DETAILS_BATCH_SIZE, itemList.size()));
+            JSONArray details = requestPublishedFileDetails(batch);
+            if (details != null)
+                details.forEach(result::put);
+        }
+        return result;
+    }
+
+    /**
      * Get and return workshop item info in json.
      */
-    public static JSONArray getPublishedFileDetails(ArrayList<Long> itemList) {
-        if (itemList == null || itemList.isEmpty())
-            return null;
+    private static JSONArray requestPublishedFileDetails(List<Long> itemList) {
         HttpPost httpPost = new HttpPost("https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?");
         List<NameValuePair> nvps = new ArrayList<>();
         nvps.add(new BasicNameValuePair("key", Config.steamKey));
