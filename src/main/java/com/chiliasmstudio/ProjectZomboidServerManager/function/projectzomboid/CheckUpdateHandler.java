@@ -34,7 +34,9 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class CheckUpdateHandler implements Runnable {
     // 伺服器設定。
@@ -50,10 +52,7 @@ public class CheckUpdateHandler implements Runnable {
         serverConfig.loadConfig(Path.of("config", "servers", configDir));
         serverLogger = LogManager.getLogger(serverConfig.getServerName());
         this.configDir = configDir;
-
-        String stateName = configDir.replaceFirst("\\.properties$", "") + ".json";
-        updateState = new UpdateState(Path.of("data", stateName));
-        updateState.load();
+        updateState = new UpdateState(Instant.now().getEpochSecond());
 
         serverLogger.debug("Server config dir: " + configDir);
         serverLogger.info("Server config loaded");
@@ -77,36 +76,25 @@ public class CheckUpdateHandler implements Runnable {
 
     /**
      * 執行一次更新檢查，若有模組更新則倒數並關閉伺服器。
-     * 只有在查詢成功、且重啟流程完成後才會更新並保存記錄，
-     * 因此途中失敗時下一輪會重新偵測到同一批更新。
+     * 只有在重啟流程完成後才會更新記錄，因此途中失敗時下一輪會重新偵測到同一批更新。
+     * 只有取得合集清單失敗才視為整輪失敗；個別模組查詢失敗時只略過該模組。
      */
-    private void checkOnce() throws InterruptedException, IOException {
+    private void checkOnce() throws InterruptedException {
         long now = Instant.now().getEpochSecond();
         serverLogger.info(formattedDate(now) + " (" + now + ") start check.");
 
         ArrayList<Long> collectionItems = SteamAPI.getCollectionDetail(serverConfig.getSteamCollections());
-        JSONArray itemList = collectionItems == null ? null : SteamAPI.getPublishedFileDetails(collectionItems);
-        if (itemList == null) {
-            serverLogger.error("Error on check, will retry next time.");
+        if (collectionItems == null) {
+            serverLogger.error("Failed to get collection list, will retry next time.");
             return;
         }
 
-        int invalid = UpdateState.countInvalidItems(itemList);
-        if (invalid > 0)
-            serverLogger.warn(invalid + " items have no update time (removed or private?).");
-
-        if (updateState.isEmpty()) {
-            // 首次執行只建立基準
-            updateState.record(itemList);
-            updateState.save();
-            serverLogger.info("Baseline recorded for " + itemList.length() + " items.");
-            return;
-        }
+        JSONArray itemList = SteamAPI.getPublishedFileDetails(collectionItems);
+        logSkippedItems(collectionItems, itemList);
 
         List<JSONObject> updateList = updateState.findUpdatedItems(itemList);
         if (updateList.isEmpty()) {
             updateState.record(itemList);
-            updateState.save();
             return;
         }
 
@@ -116,7 +104,21 @@ public class CheckUpdateHandler implements Runnable {
         restartServer(updateList);
 
         updateState.record(itemList);
-        updateState.save();
+    }
+
+    /**
+     * 記錄本輪被略過的模組 (查詢失敗、已下架或設為私人)。
+     */
+    private void logSkippedItems(List<Long> collectionItems, JSONArray itemList) {
+        Set<Long> validIds = new HashSet<>();
+        for (int i = 0; i < itemList.length(); i++) {
+            JSONObject item = itemList.optJSONObject(i);
+            if (UpdateState.isValid(item))
+                validIds.add(item.optLong("publishedfileid"));
+        }
+        List<Long> skipped = collectionItems.stream().filter(id -> !validIds.contains(id)).toList();
+        if (!skipped.isEmpty())
+            serverLogger.warn(skipped.size() + "/" + collectionItems.size() + " items skipped this check: " + skipped);
     }
 
     /**

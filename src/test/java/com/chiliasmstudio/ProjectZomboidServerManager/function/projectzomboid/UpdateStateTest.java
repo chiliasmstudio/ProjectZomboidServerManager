@@ -3,62 +3,59 @@ package com.chiliasmstudio.ProjectZomboidServerManager.function.projectzomboid;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class UpdateStateTest {
+    private static final long START = 1000;
 
     private static JSONObject item(long id, long timeUpdated) {
-        return new JSONObject().put("publishedfileid", String.valueOf(id)).put("time_updated", timeUpdated);
+        return new JSONObject().put("publishedfileid", String.valueOf(id)).put("result", 1).put("time_updated", timeUpdated);
+    }
+
+    private static JSONObject failed(long id) {
+        return new JSONObject().put("publishedfileid", String.valueOf(id)).put("result", 9);
     }
 
     @Test
-    void 首次記錄不視為更新(@TempDir Path dir) {
-        UpdateState state = new UpdateState(dir.resolve("s.json"));
-        JSONArray details = new JSONArray().put(item(1, 100)).put(item(2, 200));
+    void 未記錄的模組以啟動時間為基準() {
+        UpdateState state = new UpdateState(START);
+        List<JSONObject> updated = state.findUpdatedItems(new JSONArray().put(item(1, 900)).put(item(2, 1100)));
 
-        assertTrue(state.findUpdatedItems(details).isEmpty());
-        state.record(details);
-        assertFalse(state.isEmpty());
+        assertEquals(1, updated.size());
+        assertEquals(2L, updated.get(0).optLong("publishedfileid"));
     }
 
     @Test
-    void 只回傳時間變新的模組(@TempDir Path dir) {
-        UpdateState state = new UpdateState(dir.resolve("s.json"));
-        state.record(new JSONArray().put(item(1, 100)).put(item(2, 200)));
+    void 記錄後只回傳時間變新的模組() {
+        UpdateState state = new UpdateState(START);
+        state.record(new JSONArray().put(item(1, 1100)).put(item(2, 1200)));
 
-        JSONArray next = new JSONArray().put(item(1, 150)).put(item(2, 200)).put(item(3, 999));
-        List<JSONObject> updated = state.findUpdatedItems(next);
-
+        List<JSONObject> updated = state.findUpdatedItems(new JSONArray().put(item(1, 1150)).put(item(2, 1200)));
         assertEquals(1, updated.size());
         assertEquals(1L, updated.get(0).optLong("publishedfileid"));
     }
 
     @Test
-    void 無效模組不影響比對且會被計數(@TempDir Path dir) {
-        UpdateState state = new UpdateState(dir.resolve("s.json"));
-        JSONArray details = new JSONArray().put(item(1, 100))
-                .put(new JSONObject().put("publishedfileid", "2").put("result", 9));
+    void 查詢失敗的模組被略過且保留原記錄() {
+        UpdateState state = new UpdateState(START);
+        state.record(new JSONArray().put(item(1, 1100)));
 
-        state.record(details);
-        assertEquals(1, UpdateState.countInvalidItems(details));
-        assertTrue(state.findUpdatedItems(details).isEmpty());
+        // 本輪模組 1 查詢失敗：不視為更新，也不覆蓋記錄
+        JSONArray withFailure = new JSONArray().put(failed(1)).put(item(2, 900));
+        assertTrue(state.findUpdatedItems(withFailure).isEmpty());
+        state.record(withFailure);
+
+        // 下一輪成功時仍能偵測到期間的更新
+        assertEquals(1, state.findUpdatedItems(new JSONArray().put(item(1, 1300))).size());
     }
 
     @Test
-    void 儲存後可重新載入(@TempDir Path dir) throws Exception {
-        Path file = dir.resolve("sub").resolve("s.json");
-        UpdateState state = new UpdateState(file);
-        state.record(new JSONArray().put(item(1, 100)));
-        state.save();
-
-        UpdateState reloaded = new UpdateState(file);
-        reloaded.load();
-        assertEquals(1, reloaded.findUpdatedItems(new JSONArray().put(item(1, 101))).size());
-        assertTrue(reloaded.findUpdatedItems(new JSONArray().put(item(1, 100))).isEmpty());
+    void 判斷模組是否有效() {
+        assertTrue(UpdateState.isValid(item(1, 1)));
+        assertFalse(UpdateState.isValid(failed(1)));
+        assertFalse(UpdateState.isValid(null));
     }
 }
