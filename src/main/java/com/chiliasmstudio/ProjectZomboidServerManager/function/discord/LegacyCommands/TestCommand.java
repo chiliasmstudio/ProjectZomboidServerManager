@@ -25,7 +25,22 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import java.awt.*;
 import java.time.Instant;
 
+/**
+ * 測試用指令：收到 !embed 時發送 Embed 範例訊息。
+ */
 public class TestCommand extends ListenerAdapter {
+
+    /**
+     * 建立指令監聽器。
+     */
+    public TestCommand() {
+    }
+
+    /**
+     * 收到伺服器內的 !embed 時發送 Embed 範例。
+     *
+     * @param event 收到訊息的事件。
+     */
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         // 確保這是來自伺服器的訊息，而非私訊

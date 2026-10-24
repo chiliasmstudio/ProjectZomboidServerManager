@@ -26,17 +26,39 @@ import net.kronos.rkon.core.Rcon;
  * 送出失敗時會嘗試重新連線一次，避免長時間倒數期間連線逾時。
  */
 public class RconCommandHandler {
+    /**
+     * 提供 Rcon 連線資訊的伺服器設定。
+     */
     private final ServerConfig serverConfig;
+
+    /**
+     * 目前的 Rcon 連線，尚未連線或已斷線時為 null。
+     */
     private Rcon rcon;
 
+    /**
+     * 建立 Rcon 連線包裝，此時尚未連線。
+     *
+     * @param serverConfig 提供 Rcon 連線資訊的伺服器設定。
+     */
     public RconCommandHandler(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
     }
 
+    /**
+     * 建立 Rcon 連線並完成驗證。
+     *
+     * @throws Exception 無法連線或驗證失敗時。
+     */
     public void connect() throws Exception {
         rcon = new Rcon(serverConfig.getRconIP(), serverConfig.getRconPort(), serverConfig.getRconPassword().getBytes());
     }
 
+    /**
+     * 中斷 Rcon 連線。
+     *
+     * @return 是否正常中斷 (尚未連線時也回傳 true)。
+     */
     public boolean disConnect() {
         if (rcon == null)
             return true;

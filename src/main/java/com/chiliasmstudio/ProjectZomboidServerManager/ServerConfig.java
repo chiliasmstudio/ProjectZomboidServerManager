@@ -28,8 +28,18 @@ import java.util.Properties;
 
 import static com.chiliasmstudio.ProjectZomboidServerManager.Config.*;
 
+/**
+ * 單一 Project Zomboid 伺服器的設定 (config/servers/*.properties)。
+ * 各欄位的 getter 由 Lombok 產生。
+ */
 @Getter
 public class ServerConfig {
+    /**
+     * 建立尚未載入的設定，需呼叫 {@link #loadConfig(Path)} 載入。
+     */
+    public ServerConfig() {
+    }
+
     /**
      * 從伺服器設定檔載入設定值。
      *
@@ -82,43 +92,59 @@ public class ServerConfig {
     //-------- Basic --------
     /**
      * 伺服器名稱。
+     *
+     * @return 伺服器名稱。
      */
     private String serverName = "";
 
     /**
      * Steam 工作坊合集 ID。
+     *
+     * @return Steam 工作坊合集 ID。
      */
     private long steamCollections = -1L;
 
     /**
      * 檢查更新的間隔 (秒)。
+     *
+     * @return 檢查更新的間隔 (秒)。
      */
     private long checkFrequency = -1L;
 
     /**
      * 主控台與 Discord 顯示時間所使用的時區。
+     *
+     * @return 顯示時間所使用的時區。
      */
     private ZoneId timeZone = ZoneId.systemDefault();
 
     //-------- Rcon --------
     /**
      * 伺服器 Rcon IP。
+     *
+     * @return 伺服器 Rcon IP。
      */
     private String rconIP = "";
 
     /**
      * 伺服器 Rcon 連接埠。
+     *
+     * @return 伺服器 Rcon 連接埠。
      */
     private int rconPort = -1;
 
     /**
      * 伺服器 Rcon 密碼。
+     *
+     * @return 伺服器 Rcon 密碼。
      */
     private String rconPassword = "";
 
     //-------- Discord --------
     /**
      * 發送通知的 Discord 頻道 (選填，0 表示不發送)。
+     *
+     * @return 通知頻道 ID，0 表示不發送。
      */
     private long discordChannel = 0L;
 
@@ -126,6 +152,8 @@ public class ServerConfig {
     /**
      * 除錯用：略過 5 分鐘、1 分鐘、30 秒、10 秒的重啟倒數，
      * 直接在 10 秒後重啟伺服器。
+     *
+     * @return 是否略過重啟倒數。
      */
     private boolean debugSkipRestartDelay = false;
 }

@@ -29,6 +29,15 @@ import java.util.List;
  * 建構模組更新與重啟通知的 Embed 卡片。
  */
 public class RestartEmbed {
+    /**
+     * 工具類別，不需要建立實例。
+     */
+    private RestartEmbed() {
+    }
+
+    /**
+     * 工作坊模組頁面網址前綴。
+     */
     private static final String WORKSHOP_URL = "https://steamcommunity.com/sharedfiles/filedetails/?id=";
 
     /**
@@ -41,11 +50,14 @@ public class RestartEmbed {
     }
 
     /**
+     * 建構重啟通知卡片。
+     *
      * @param serverName 伺服器名稱。
      * @param countdown  預計重啟倒數的文字。
      * @param debugMode  是否為除錯快速重啟。
      * @param mods       待更新的模組。
      * @param note       額外說明 (可為 null)。
+     * @return 重啟通知卡片。
      */
     public static MessageEmbed build(String serverName, String countdown, boolean debugMode, List<Mod> mods, String note) {
         EmbedBuilder embed = new EmbedBuilder();
@@ -67,6 +79,9 @@ public class RestartEmbed {
 
     /**
      * 將模組列成 Markdown 超連結，超過欄位長度上限時以「其他 N 個」收尾。
+     *
+     * @param mods 待更新的模組。
+     * @return Embed 欄位內容；沒有模組時為 "-"。
      */
     static String formatMods(List<Mod> mods) {
         StringBuilder result = new StringBuilder();

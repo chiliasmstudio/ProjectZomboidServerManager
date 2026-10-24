@@ -29,10 +29,21 @@ import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 
 import java.util.List;
 
+/**
+ * 測試用指令：以模擬資料發送重啟通知卡片，提供文字指令 !testrestart 與斜線指令 /testrestart。
+ */
 public class TestRestartCommand extends ListenerAdapter implements SlashCommandProvider {
 
     /**
+     * 建立指令監聽器。
+     */
+    public TestRestartCommand() {
+    }
+
+    /**
      * 以模擬資料建構測試重啟卡片，版面與實際更新通知共用 RestartEmbed。
+     *
+     * @return 測試用的重啟通知卡片。
      */
     private MessageEmbed buildRestartEmbed() {
         List<RestartEmbed.Mod> mods = List.of(
@@ -44,7 +55,9 @@ public class TestRestartCommand extends ListenerAdapter implements SlashCommandP
     }
 
     /**
-     * 處理傳統文字指令 !testrestart
+     * 處理傳統文字指令 !testrestart。
+     *
+     * @param event 收到訊息的事件。
      */
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
@@ -57,7 +70,9 @@ public class TestRestartCommand extends ListenerAdapter implements SlashCommandP
     }
 
     /**
-     * 處理斜線指令 /testrestart
+     * 處理斜線指令 /testrestart。
+     *
+     * @param event 斜線指令事件。
      */
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
@@ -66,6 +81,11 @@ public class TestRestartCommand extends ListenerAdapter implements SlashCommandP
         }
     }
 
+    /**
+     * 取得 /testrestart 的斜線指令定義。
+     *
+     * @return 斜線指令定義。
+     */
     @Override
     public SlashCommandData getSlashCommand() {
         return Commands.slash("testrestart", "發送測試重啟通知 Embed 卡片");

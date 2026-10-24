@@ -37,7 +37,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
+/**
+ * Steam Web API (ISteamRemoteStorage) 的查詢，失敗時會自動重試。
+ */
 public class SteamAPI {
+    /**
+     * 工具類別，不需要建立實例。
+     */
+    private SteamAPI() {
+    }
+
+    /**
+     * Steam API 相關的 logger。
+     */
     private final static Logger SteamApiLogger = LogManager.getLogger("SteamAPI");
 
     /**
@@ -53,7 +65,9 @@ public class SteamAPI {
     /**
      * 取得合集內的模組 ID，失敗時每 30 秒重試，共重試 3 次。
      *
+     * @param collectionID 工作坊合集 ID。
      * @return 模組 ID 清單；全部失敗時回傳 null。
+     * @throws InterruptedException 等待重試期間被中斷時。
      */
     public static ArrayList<Long> getCollectionDetail(long collectionID) throws InterruptedException {
         return withRetry("GetCollectionDetails", () -> requestCollectionDetail(collectionID));
@@ -62,7 +76,9 @@ public class SteamAPI {
     /**
      * 一次查詢所有模組的資訊，失敗時每 30 秒重試，共重試 3 次。
      *
-     * @return 各模組的 publishedfiledetails；全部失敗時回傳 null。
+     * @param itemList 模組 ID 清單。
+     * @return 各模組的 publishedfiledetails；清單為空時回傳空陣列，全部失敗時回傳 null。
+     * @throws InterruptedException 等待重試期間被中斷時。
      */
     public static JSONArray getPublishedFileDetails(List<Long> itemList) throws InterruptedException {
         if (itemList == null || itemList.isEmpty())
@@ -72,6 +88,12 @@ public class SteamAPI {
 
     /**
      * 執行請求，回傳 null 視為失敗並在間隔後重試。
+     *
+     * @param <T>     請求結果的型別。
+     * @param apiName API 名稱，用於 log。
+     * @param request 執行一次請求，失敗時回傳 null。
+     * @return 請求結果；全部重試都失敗時回傳 null。
+     * @throws InterruptedException 等待重試期間被中斷時。
      */
     private static <T> T withRetry(String apiName, Supplier<T> request) throws InterruptedException {
         T result = request.get();
@@ -86,7 +108,10 @@ public class SteamAPI {
     }
 
     /**
-     * Get and return workshop item ids in collection.
+     * 呼叫一次 GetCollectionDetails 取得合集內的模組 ID，格式錯誤的單一項目會被略過。
+     *
+     * @param collectionID 工作坊合集 ID。
+     * @return 模組 ID 清單；請求失敗時回傳 null。
      */
     private static ArrayList<Long> requestCollectionDetail(long collectionID) {
         HttpPost httpPost = new HttpPost("https://api.steampowered.com/ISteamRemoteStorage/GetCollectionDetails/v1");
@@ -129,7 +154,10 @@ public class SteamAPI {
     }
 
     /**
-     * Get and return workshop item info in json.
+     * 呼叫一次 GetPublishedFileDetails 查詢所有模組的資訊。
+     *
+     * @param itemList 模組 ID 清單。
+     * @return 各模組的 publishedfiledetails；請求失敗時回傳 null。
      */
     private static JSONArray requestPublishedFileDetails(List<Long> itemList) {
         HttpPost httpPost = new HttpPost("https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/?");

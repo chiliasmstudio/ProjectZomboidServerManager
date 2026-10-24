@@ -31,10 +31,19 @@ import java.util.Map;
  * 尚未成功檢查過的模組以管理程式啟動時間為基準，因此首次檢查失敗也不會漏掉啟動後的更新。
  */
 public class UpdateState {
+    /**
+     * 管理程式啟動時間 (Unix 秒)，作為尚未記錄模組的比較基準。
+     */
     private final long startTime;
+
+    /**
+     * 模組 ID 對應最後一次看到的 time_updated (Unix 秒)。
+     */
     private final Map<Long, Long> itemTimes = new HashMap<>();
 
     /**
+     * 建立空的更新記錄。
+     *
      * @param startTime 管理程式啟動時間 (Unix 秒)，作為尚未記錄模組的比較基準。
      */
     public UpdateState(long startTime) {
@@ -43,6 +52,9 @@ public class UpdateState {
 
     /**
      * 模組是否成功取得資料。Steam 對已下架、私人或查詢失敗的模組會回傳 result != 1 且沒有 time_updated。
+     *
+     * @param item publishedfiledetails 中的單一模組資料，可為 null。
+     * @return 是否為可比對的有效資料。
      */
     public static boolean isValid(JSONObject item) {
         return item != null && item.optInt("result", 1) == 1 && item.has("time_updated");

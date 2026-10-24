@@ -35,12 +35,42 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+/**
+ * 程式進入點：載入設定、啟動 Discord Bot，並為每台伺服器排程更新檢查。
+ */
 public class main {
+    /**
+     * 程式進入點類別，不需要建立實例。
+     */
+    private main() {
+    }
+
+    /**
+     * 主程式的 logger。
+     */
     private static final Logger mainLogger = LogManager.getLogger("main");
+
+    /**
+     * 設定檔目錄。
+     */
     private static final Path CONFIG_DIR = Path.of("config");
+
+    /**
+     * 伺服器設定檔目錄。
+     */
     private static final Path SERVERS_DIR = CONFIG_DIR.resolve("servers");
+
+    /**
+     * 伺服器設定範本檔名，載入時會被略過。
+     */
     private static final String SERVER_EXAMPLE = "server_example.properties";
 
+    /**
+     * 程式進入點。
+     *
+     * @param args 啟動參數，支援 -debug 與 -trace 調整 log 等級。
+     * @throws Exception 設定載入失敗或等待 Bot 就緒時被中斷。
+     */
     public static void main(String[] args) throws Exception {
         for (String arg : args) {
             // 依啟動參數設定 log 等級
@@ -65,6 +95,9 @@ public class main {
 
     /**
      * 讀取 config/servers 下的伺服器設定，為每台伺服器排程更新檢查。
+     *
+     * @throws IOException           讀取設定目錄或設定檔失敗時。
+     * @throws IllegalStateException 找不到範本以外的伺服器設定檔時。
      */
     public static void startUpdateCheckers() throws IOException {
         Config.copyResourceIfMissing("config/servers/" + SERVER_EXAMPLE, SERVERS_DIR.resolve(SERVER_EXAMPLE));

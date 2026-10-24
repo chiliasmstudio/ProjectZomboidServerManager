@@ -36,9 +36,29 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Discord Bot 的建立與指令註冊。
+ */
 public class MainBot {
+    /**
+     * 工具類別，不需要建立實例。
+     */
+    private MainBot() {
+    }
+
+    /**
+     * Bot 使用的 logger。
+     */
     private static final Logger botLogger = LogManager.getLogger("MainBot");
+
+    /**
+     * 建立 Bot 時使用的 builder。
+     */
     public static JDABuilder botBuilder = null;
+
+    /**
+     * 已啟動的 Bot 實例，尚未初始化時為 null。
+     */
     public static JDA jda = null;
 
     /**
@@ -58,9 +78,10 @@ public class MainBot {
             HelloWorld.class, TestCommand.class, TestRestartCommand.class);
 
     /**
-     * 初始化 Bot。
+     * 初始化 Bot，依 config.properties 的開關註冊指令。
      *
      * @param discordToken Discord Bot 的 Token。
+     * @return 是否成功建立 Bot。
      */
     public static boolean initialize(String discordToken) {
         try {

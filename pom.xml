@@ -78,6 +78,10 @@
                 <configuration>
                     <release>${java.version}</release>
                     <encoding>UTF-8</encoding>
+                    <compilerArgs>
+                        <!-- 檢查所有類別、欄位與方法 (含 private) 的 Javadoc，缺漏時於編譯輸出警告 -->
+                        <arg>-Xdoclint:all/private</arg>
+                    </compilerArgs>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>

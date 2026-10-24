@@ -27,7 +27,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 
+/**
+ * 主設定 (config.properties) 的載入與存取，並提供讀取 properties 檔的共用工具方法。
+ */
 public class Config {
+    /**
+     * 工具類別，不需要建立實例。
+     */
+    private Config() {
+    }
+
     /**
      * 主設定檔載入時使用的 Properties，保留下來供查詢指令開關。
      */
@@ -65,6 +74,7 @@ public class Config {
      *
      * @param resourcePath JAR 內資源路徑。
      * @param target       目標檔案路徑。
+     * @throws IOException 找不到資源或複製失敗時。
      */
     public static void copyResourceIfMissing(String resourcePath, Path target) throws IOException {
         if (Files.exists(target))
@@ -80,6 +90,10 @@ public class Config {
 
     /**
      * 以 UTF-8 讀取 properties 檔，避免中文值變成亂碼。
+     *
+     * @param file properties 檔路徑。
+     * @return 讀取到的設定值。
+     * @throws IOException 讀取失敗時。
      */
     public static Properties readProperties(Path file) throws IOException {
         Properties result = new Properties();
@@ -91,6 +105,11 @@ public class Config {
 
     /**
      * 讀取必要的字串設定，缺漏時拋出包含鍵名的例外。
+     *
+     * @param props 設定來源。
+     * @param key   設定鍵名。
+     * @return 去除前後空白後的設定值。
+     * @throws ConfigException 設定值缺漏或為空字串時。
      */
     public static String requireString(Properties props, String key) {
         String value = props.getProperty(key, "").trim();
@@ -101,6 +120,11 @@ public class Config {
 
     /**
      * 讀取必要的整數設定，缺漏或格式錯誤時拋出包含鍵名的例外。
+     *
+     * @param props 設定來源。
+     * @param key   設定鍵名。
+     * @return 解析後的整數值。
+     * @throws ConfigException 設定值缺漏或不是整數時。
      */
     public static long requireLong(Properties props, String key) {
         String value = requireString(props, key);
@@ -113,6 +137,12 @@ public class Config {
 
     /**
      * 讀取選填的整數設定，未設定時回傳預設值。
+     *
+     * @param props        設定來源。
+     * @param key          設定鍵名。
+     * @param defaultValue 未設定時使用的預設值。
+     * @return 解析後的整數值或預設值。
+     * @throws ConfigException 有設定但不是整數時。
      */
     public static long optionalLong(Properties props, String key, long defaultValue) {
         if (props.getProperty(key, "").trim().isEmpty())
@@ -124,6 +154,11 @@ public class Config {
      * 設定檔內容錯誤。
      */
     public static class ConfigException extends RuntimeException {
+        /**
+         * 建立設定錯誤例外。
+         *
+         * @param message 錯誤說明，應包含出錯的設定鍵名。
+         */
         public ConfigException(String message) {
             super(message);
         }

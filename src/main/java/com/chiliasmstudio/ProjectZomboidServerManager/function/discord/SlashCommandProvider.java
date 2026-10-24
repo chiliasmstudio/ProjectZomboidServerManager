@@ -25,5 +25,10 @@ import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
  * 由 MainBot 統一收集後一次註冊，避免各指令分別呼叫 updateCommands() 互相覆蓋。
  */
 public interface SlashCommandProvider {
+    /**
+     * 取得此指令的斜線指令定義。
+     *
+     * @return 斜線指令定義。
+     */
     SlashCommandData getSlashCommand();
 }

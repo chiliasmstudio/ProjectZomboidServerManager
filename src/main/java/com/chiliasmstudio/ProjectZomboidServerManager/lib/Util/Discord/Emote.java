@@ -18,10 +18,23 @@
 
 package com.chiliasmstudio.ProjectZomboidServerManager.lib.Util.Discord;
 
+/**
+ * Discord 自訂表情的訊息格式字串。
+ */
 public class Emote {
+    /**
+     * 常數類別，不需要建立實例。
+     */
+    private Emote() {
+    }
+
+    /**
+     * Project Zomboid 標誌表情。
+     */
     public static final String Logo_ProjectZomboid = "<:Logo_ProjectZomboid:1004025758664097933>";//<:pz:963361244436381716>
 
+    /**
+     * Phoenix 標誌表情。
+     */
     public static final String Logo_Phoenix = "<:Logo_Phoenix:1115229600155447296>";//<:Logo_Phoenix:1115229600155447296>
 }
-
-

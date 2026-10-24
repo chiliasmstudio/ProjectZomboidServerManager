@@ -25,10 +25,21 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 
 
+/**
+ * 斜線指令 /lucat：回覆 meow。
+ */
 public class LuCat extends ListenerAdapter implements SlashCommandProvider {
 
     /**
-     * Reply meow when lucat command send.
+     * 建立指令監聽器。
+     */
+    public LuCat() {
+    }
+
+    /**
+     * 收到 /lucat 時回覆 meow。
+     *
+     * @param event 斜線指令事件。
      */
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
@@ -37,6 +48,11 @@ public class LuCat extends ListenerAdapter implements SlashCommandProvider {
         }
     }
 
+    /**
+     * 取得 /lucat 的斜線指令定義。
+     *
+     * @return 斜線指令定義。
+     */
     @Override
     public SlashCommandData getSlashCommand() {
         return Commands.slash("lucat", "meow");

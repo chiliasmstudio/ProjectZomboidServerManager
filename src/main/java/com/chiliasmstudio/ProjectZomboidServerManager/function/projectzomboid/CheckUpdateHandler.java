@@ -18,6 +18,7 @@
 
 package com.chiliasmstudio.ProjectZomboidServerManager.function.projectzomboid;
 
+import com.chiliasmstudio.ProjectZomboidServerManager.Config;
 import com.chiliasmstudio.ProjectZomboidServerManager.ServerConfig;
 import com.chiliasmstudio.ProjectZomboidServerManager.lib.Util.Discord.DiscordNotifier;
 import com.chiliasmstudio.ProjectZomboidServerManager.lib.Util.Discord.RestartEmbed;
@@ -38,16 +39,49 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * 單一伺服器的模組更新檢查任務，由排程器週期執行。
+ * 偵測到模組更新時會透過 Rcon 廣播倒數並關閉伺服器，同時發送 Discord 通知。
+ */
 public class CheckUpdateHandler implements Runnable {
-    // 伺服器設定。
+    /**
+     * 伺服器設定。
+     *
+     * @return 伺服器設定。
+     */
     @Getter
     private final ServerConfig serverConfig = new ServerConfig();
+
+    /**
+     * 以伺服器名稱命名的 logger。
+     */
     private final Logger serverLogger;
+
+    /**
+     * 各模組最後一次看到的更新時間 (只存在記憶體)。
+     */
     private final UpdateState updateState;
+
+    /**
+     * 重啟倒數期間使用的 Rcon 連線。
+     */
     private RconCommandHandler rconCommandHandler;
+
+    /**
+     * 伺服器設定檔名稱 (位於 config/servers 下)。
+     *
+     * @return 伺服器設定檔名稱。
+     */
     @Getter
     private final String configDir;
 
+    /**
+     * 載入伺服器設定並建立檢查任務。
+     *
+     * @param configDir 伺服器設定檔名稱 (位於 config/servers 下)。
+     * @throws IOException            讀取設定檔失敗時。
+     * @throws Config.ConfigException 設定值缺漏或格式錯誤時。
+     */
     public CheckUpdateHandler(String configDir) throws IOException {
         serverConfig.loadConfig(Path.of("config", "servers", configDir));
         serverLogger = LogManager.getLogger(serverConfig.getServerName());
@@ -79,6 +113,8 @@ public class CheckUpdateHandler implements Runnable {
      * 只有在重啟流程完成後才會更新記錄，因此途中失敗時下一輪會重新偵測到同一批更新。
      * Steam 請求失敗時會每 30 秒重試，共重試 3 次，仍失敗則略過本輪等待下次檢查。
      * 個別模組查詢失敗 (result != 1) 時只略過該模組。
+     *
+     * @throws InterruptedException 等待重試或倒數期間被中斷時。
      */
     private void checkOnce() throws InterruptedException {
         long now = Instant.now().getEpochSecond();
@@ -113,6 +149,9 @@ public class CheckUpdateHandler implements Runnable {
 
     /**
      * 記錄本輪被略過的模組 (查詢失敗、已下架或設為私人)。
+     *
+     * @param collectionItems 合集內的模組 ID。
+     * @param itemList        GetPublishedFileDetails 回傳的 publishedfiledetails。
      */
     private void logSkippedItems(List<Long> collectionItems, JSONArray itemList) {
         Set<Long> validIds = new HashSet<>();
@@ -127,7 +166,10 @@ public class CheckUpdateHandler implements Runnable {
     }
 
     /**
-     * 透過 Rcon 廣播倒數後關閉伺服器。
+     * 發送 Discord 通知、透過 Rcon 廣播倒數後關閉伺服器。
+     *
+     * @param updateList 需要更新的模組。
+     * @throws InterruptedException 倒數期間被中斷時。
      */
     private void restartServer(List<JSONObject> updateList) throws InterruptedException {
         long channel = serverConfig.getDiscordChannel();
@@ -172,6 +214,8 @@ public class CheckUpdateHandler implements Runnable {
 
     /**
      * 同時寫入 log 並透過 Rcon 在遊戲內廣播。
+     *
+     * @param message 要廣播的訊息。
      */
     private void broadcast(String message) {
         serverLogger.info(message);

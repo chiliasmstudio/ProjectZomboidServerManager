@@ -22,13 +22,22 @@ import net.dv8tion.jda.api.entities.Message;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Discord 訊息相關的工具方法。
+ */
 public class Utils {
 
     /**
-     * Send message and delete after delay.
+     * 工具類別，不需要建立實例。
+     */
+    private Utils() {
+    }
+
+    /**
+     * 在指定秒數後刪除訊息。
      *
-     * @param message Message to send.
-     * @param delay   Second before delete message.
+     * @param message 要刪除的訊息。
+     * @param delay   刪除前等待的秒數。
      */
     public static void deleteAfter(Message message, int delay) {
         message.delete().queueAfter(delay, TimeUnit.SECONDS);
